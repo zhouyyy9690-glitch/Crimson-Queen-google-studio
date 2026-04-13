@@ -24,7 +24,9 @@ import {
   Volume2,
   VolumeX,
   Flower,
-  Flower2
+  Flower2,
+  MapPin,
+  Map
 } from 'lucide-react';
 import { gameData } from './gameData';
 import { Scene, Stage, Choice, Character, Location as GameLocation, Paragraph } from './types';
@@ -757,7 +759,8 @@ export default function App() {
 
     // Location unlocks
     locations.forEach(loc => {
-      if (!unlockedLocations.has(loc.id) && currentText.includes(loc.name)) {
+      const isMatch = currentText.includes(loc.name) || (loc.matchNames?.some(m => currentText.includes(m)));
+      if (!unlockedLocations.has(loc.id) && isMatch) {
         setUnlockedLocations(prev => {
           const next = new Set(prev);
           next.add(loc.id);
@@ -1462,7 +1465,7 @@ export default function App() {
                 </div>
 
                 <div 
-                  className="flex-grow relative bg-[#1a1a1a] border-2 border-amber-900/20 rounded-sm overflow-hidden shadow-[inset_0_0_100px_rgba(0,0,0,0.8)] cursor-grab active:cursor-grabbing"
+                  className="flex-grow relative bg-[#f4d088] border-2 border-amber-900/40 rounded-sm overflow-hidden shadow-[inset_0_0_150px_rgba(139,69,19,0.3)] cursor-grab active:cursor-grabbing"
                   onWheel={handleMapZoom}
                 >
                   <motion.div 
@@ -1484,31 +1487,115 @@ export default function App() {
                       )}
                       
                       {/* Parchment Texture Overlay */}
-                      <div className="absolute inset-0 opacity-30 pointer-events-none mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/old-map.png')]" />
+                      <div className="absolute inset-0 opacity-50 pointer-events-none mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/old-map.png')]" />
+                      <div className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')]" />
                       
                       {/* Map Grid/Lines */}
-                      <svg className="absolute inset-0 w-full h-full opacity-10 pointer-events-none">
+                      <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none">
                         <defs>
-                          <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
-                            <path d="M 100 0 L 0 0 0 100" fill="none" stroke="currentColor" strokeWidth="0.5"/>
+                          <pattern id="grid" width="120" height="120" patternUnits="userSpaceOnUse">
+                            <path d="M 120 0 L 0 0 0 120" fill="none" stroke="#8b4513" strokeWidth="0.5" strokeDasharray="4 4"/>
                           </pattern>
                         </defs>
-                        <rect width="100%" height="100%" fill="url(#grid)" className="text-amber-900" />
+                        <rect width="100%" height="100%" fill="url(#grid)" />
+                        
+                        {/* Hand-Drawn Landmass Outline (Conquest Kingdom) */}
+                        <path 
+                          d="M 300 200 c 50 -50 150 -20 200 -50 s 100 -80 200 -50 s 150 50 200 100 s 50 150 0 250 s -100 200 -200 250 s -200 50 -300 100 s -150 -50 -200 -150 s -50 -200 0 -300 s 50 -100 100 -150" 
+                          fill="#fdf5e6" 
+                          stroke="#5d4037" 
+                          strokeWidth="3" 
+                          strokeLinejoin="round"
+                          className="opacity-40"
+                        />
+
+                        {/* Medieval Terrain - Mountains (North & East) */}
+                        <g className="text-[#5d4037]/60" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          {/* North Mountains */}
+                          {[
+                            {x: 420, y: 120}, {x: 450, y: 100}, {x: 480, y: 130},
+                            {x: 550, y: 90}, {x: 580, y: 110}, {x: 610, y: 80}
+                          ].map((p, i) => (
+                            <g key={`mtn-n-${i}`} transform={`translate(${p.x}, ${p.y})`}>
+                              <path d="M -15 20 L 0 -15 L 15 20" />
+                              <path d="M -5 5 L 5 5 M -3 10 L 3 10" strokeWidth="0.5" />
+                            </g>
+                          ))}
+                          
+                          {/* East Mountains */}
+                          {[
+                            {x: 850, y: 420}, {x: 870, y: 450}, {x: 840, y: 480}
+                          ].map((p, i) => (
+                            <g key={`mtn-e-${i}`} transform={`translate(${p.x}, ${p.y})`}>
+                              <path d="M -12 18 L 0 -12 L 12 18" />
+                              <path d="M -4 4 L 4 4" strokeWidth="0.5" />
+                            </g>
+                          ))}
+                        </g>
+
+                        {/* Medieval Terrain - Rivers */}
+                        <g className="text-[#4e342e]/30" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <path d="M 520 380 c 20 40 -10 80 30 130 s 0 100 40 150" />
+                          <path d="M 480 420 c -30 30 10 70 -20 110" />
+                        </g>
+
+                        {/* Medieval Terrain - Forests (Lollipop style) */}
+                        <g className="text-[#3e2723]/40">
+                          {[
+                            {x: 410, y: 760}, {x: 435, y: 775}, {x: 460, y: 755},
+                            {x: 540, y: 830}, {x: 565, y: 845}, {x: 590, y: 825},
+                            {x: 780, y: 550}, {x: 805, y: 565}
+                          ].map((p, i) => (
+                            <g key={`tree-${i}`} transform={`translate(${p.x}, ${p.y})`}>
+                              <line x1="0" y1="0" x2="0" y2="12" stroke="currentColor" strokeWidth="1.5" />
+                              <circle cx="0" cy="0" r="5" fill="currentColor" stroke="none" />
+                            </g>
+                          ))}
+                        </g>
+
+                        {/* Medieval Terrain - Waves */}
+                        <g className="text-[#5d4037]/30" fill="none" stroke="currentColor" strokeWidth="1">
+                          {[
+                            {x: 100, y: 350}, {x: 150, y: 380}, {x: 120, y: 420},
+                            {x: 1050, y: 320}, {x: 1100, y: 350}, {x: 1080, y: 400},
+                            {x: 200, y: 150}, {x: 950, y: 750}
+                          ].map((p, i) => (
+                            <path key={`wave-${i}`} d={`M ${p.x} ${p.y} c 5 -3 10 3 15 0 m 5 0 c 5 -3 10 3 15 0`} />
+                          ))}
+                        </g>
+
+                        {/* Decorative Elements - Ship */}
+                        <g transform="translate(250, 650) scale(0.8)" className="text-[#5d4037]/50" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M 0 20 L 60 20 L 50 40 L 10 40 Z" fill="currentColor" fillOpacity="0.1" />
+                          <line x1="30" y1="20" x2="30" y2="-20" />
+                          <path d="M 30 -20 L 60 10 L 30 10 Z" fill="currentColor" fillOpacity="0.2" />
+                        </g>
+
+                        {/* Decorative Elements - Whirlpool */}
+                        <g transform="translate(100, 550) scale(0.6)" className="text-[#5d4037]/30" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M 0 0 c 20 -20 40 0 20 40 s -60 20 -60 -20 s 40 -60 80 -20 s 20 80 -40 100" />
+                        </g>
+
+                        {/* Map Border */}
+                        <rect x="20" y="20" width="1160" height="860" fill="none" stroke="#5d4037" strokeWidth="4" className="opacity-20" />
+                        <rect x="30" y="30" width="1140" height="840" fill="none" stroke="#5d4037" strokeWidth="1" className="opacity-10" />
                       </svg>
 
-                      {/* Locations */}
+                      {/* Locations & Region Labels */}
                       {locations
                         .filter(loc => !loc.path || loc.path === 'all' || loc.path === currentPath)
                         .map((loc) => {
                           const isUnlocked = unlockedLocations.has(loc.id);
+                          
+                          // Logic: Region labels are always shown (grayed out if not unlocked)
+                          // Specific locations only shown if unlocked
+                          if (!loc.isRegionLabel && !isUnlocked) return null;
+
                           return (
                             <motion.div
                               key={loc.id}
-                              initial={{ scale: 0, opacity: 0 }}
-                              animate={{ 
-                                scale: isUnlocked ? 1 : 0.8, 
-                                opacity: isUnlocked ? 1 : 0.2 
-                              }}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
                               style={{ 
                                 left: `${loc.x}%`, 
                                 top: `${loc.y}%` 
@@ -1517,31 +1604,48 @@ export default function App() {
                             >
                               <button 
                                 onClick={() => isUnlocked && setSelectedLocationId(loc.id)}
-                                className={`relative flex flex-col items-center group ${isUnlocked ? 'cursor-pointer' : 'cursor-default'}`}
+                                className={`relative flex flex-col items-center group transition-all ${isUnlocked ? 'hover:scale-110 cursor-pointer' : 'cursor-default'}`}
                               >
-                                {/* Location Marker */}
-                                <div className={`w-3 h-3 md:w-5 md:h-5 rounded-full border-2 ${isUnlocked ? 'border-emerald-500 bg-emerald-900/50 shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'border-neutral-700 bg-neutral-900'} transition-all group-hover:scale-125 group-hover:border-emerald-400`} />
-                                
-                                {/* Location Label */}
-                                <div className={`mt-3 px-2 py-0.5 md:px-3 md:py-1 bg-black/80 border border-amber-900/20 backdrop-blur-sm transition-all ${isUnlocked ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                  <p className="text-[8px] md:text-[10px] font-display text-amber-600 tracking-widest uppercase whitespace-nowrap">
-                                    {isUnlocked ? loc.name : '???'}
-                                  </p>
-                                </div>
+                                {loc.isRegionLabel ? (
+                                  <div className={`px-4 py-2 border-y transition-colors duration-500 ${isUnlocked ? 'border-[#5d4037]/40 bg-[#8b4513]/5' : 'border-neutral-800 bg-black/10 grayscale opacity-40'}`}>
+                                    <h2 className={`text-lg md:text-xl font-display tracking-[0.4em] uppercase whitespace-nowrap ${isUnlocked ? 'text-[#5d4037]' : 'text-neutral-600'}`}>
+                                      {loc.name}
+                                    </h2>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center">
+                                    <div className={`w-1.5 h-1.5 rounded-full mb-1 ${isUnlocked ? 'bg-[#5d4037]' : 'bg-neutral-600'}`} />
+                                    <p className={`text-[10px] md:text-xs font-display tracking-widest uppercase whitespace-nowrap drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)] ${isUnlocked ? 'text-[#5d4037]' : 'text-neutral-600'}`}>
+                                      {loc.name}
+                                    </p>
+                                    <div className={`w-0 h-px transition-all duration-300 ${isUnlocked ? 'bg-[#5d4037]/40 group-hover:w-full' : ''}`} />
+                                  </div>
+                                )}
                               </button>
                             </motion.div>
                           );
                         })}
 
-                      {/* Map Decorations */}
-                      <div className="absolute top-12 right-12 opacity-20 pointer-events-none">
-                        <svg width="160" height="160" viewBox="0 0 100 100" className="text-amber-900">
-                          <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" />
-                          <path d="M50 5 L50 95 M5 50 L95 50 M20 20 L80 80 M80 20 L20 80" stroke="currentColor" strokeWidth="0.5" />
-                          <text x="50" y="15" textAnchor="middle" fontSize="8" fill="currentColor" className="font-display">N</text>
-                          <text x="50" y="92" textAnchor="middle" fontSize="8" fill="currentColor" className="font-display">S</text>
-                          <text x="85" y="53" textAnchor="middle" fontSize="8" fill="currentColor" className="font-display">E</text>
-                          <text x="15" y="53" textAnchor="middle" fontSize="8" fill="currentColor" className="font-display">W</text>
+                      {/* Map Decorations - Compass Rose */}
+                      <div className="absolute top-12 left-12 opacity-40 pointer-events-none">
+                        <svg width="140" height="140" viewBox="0 0 100 100" className="text-[#5d4037]">
+                          <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 2" />
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="1" />
+                          {/* Main Points */}
+                          <path d="M 50 10 L 55 45 L 50 50 L 45 45 Z" fill="currentColor" />
+                          <path d="M 50 90 L 55 55 L 50 50 L 45 55 Z" fill="currentColor" />
+                          <path d="M 90 50 L 55 55 L 50 50 L 55 45 Z" fill="currentColor" />
+                          <path d="M 10 50 L 45 55 L 50 50 L 45 45 Z" fill="currentColor" />
+                          {/* Sub Points */}
+                          <path d="M 25 25 L 50 50 L 30 30 Z" fill="currentColor" opacity="0.5" />
+                          <path d="M 75 25 L 50 50 L 70 30 Z" fill="currentColor" opacity="0.5" />
+                          <path d="M 25 75 L 50 50 L 30 70 Z" fill="currentColor" opacity="0.5" />
+                          <path d="M 75 75 L 50 50 L 70 70 Z" fill="currentColor" opacity="0.5" />
+                          
+                          <text x="50" y="8" textAnchor="middle" fontSize="10" fill="currentColor" className="font-display font-bold">N</text>
+                          <text x="50" y="98" textAnchor="middle" fontSize="10" fill="currentColor" className="font-display font-bold">S</text>
+                          <text x="96" y="54" textAnchor="middle" fontSize="10" fill="currentColor" className="font-display font-bold">E</text>
+                          <text x="4" y="54" textAnchor="middle" fontSize="10" fill="currentColor" className="font-display font-bold">W</text>
                         </svg>
                       </div>
                     </div>
@@ -1592,6 +1696,18 @@ export default function App() {
                           {selectedLocation.faction}
                         </p>
                       </div>
+
+                      {selectedLocation.region && (
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-3 text-amber-900/60">
+                            <MapPin className="w-4 h-4" />
+                            <span className="text-xs uppercase tracking-widest">所属区域 · Region</span>
+                          </div>
+                          <p className="text-neutral-300 font-serif italic text-lg leading-relaxed">
+                            {selectedLocation.region}
+                          </p>
+                        </div>
+                      )}
 
                       <div className="space-y-6">
                         <div className="flex items-center gap-3 text-amber-900/60">

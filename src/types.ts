@@ -64,6 +64,9 @@ export interface Location {
   x: number; // 0-100 percentage
   y: number; // 0-100 percentage
   path?: 'fox' | 'deer' | 'eagle' | 'all';
+  region?: 'North' | 'West' | 'South' | 'East' | 'Central';
+  isRegionLabel?: boolean;
+  matchNames?: string[];
 }
 
 export interface GameData {

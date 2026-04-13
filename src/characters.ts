@@ -93,7 +93,7 @@ export const characters: Character[] = [
     id: 'septimus',
     name: '塞普迪莫斯学士',
     title: '溪木堡学士',
-    description: '在溪木堡陪伴凯瑟琳长大的学士，胸前挂着象征学识的五环。他冷静而睿智。',
+    description: '在溪木堡陪伴凯瑟琳长大的学士，胸前挂着象征学识的六环。他冷静而睿智。',
     unlockedAt: ['fox', 'Yourdecision'],
     iconType: 'sword',
     path: 'fox'
