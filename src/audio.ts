@@ -14,12 +14,13 @@ export const BGM_ASSETS = {
   MYSTERY: "/audio/bgm_mystery.mp3", // 建议也上传一个本地文件
 };
 
+// 使用静音数据 URI 作为占位符，防止 403 错误干扰测试
+const SILENT_SOUND = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
+
 export const SFX_ASSETS = {
-  // 推荐：仪式感点击音效
-  CLICK: "https://cdn.pixabay.com/audio/2022/03/15/audio_c8c8a73467.mp3",
-  
-  // 翻页音效
-  PAGE_TURN: "https://www.soundjay.com/misc/sounds/page-flip-01a.mp3",
+  // 暂时使用静音，直到您上传自己的音效
+  CLICK: SILENT_SOUND,
+  PAGE_TURN: SILENT_SOUND,
 };
 
 // --- 2. 场景与 BGM 对应表 (Scene BGM Mapping) ---

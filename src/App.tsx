@@ -627,6 +627,7 @@ export default function App() {
     const normalizedCurrent = audio.src ? new URL(audio.src, window.location.href).href : '';
 
     if (normalizedCurrent !== normalizedTarget) {
+      console.log("🎵 尝试切换 BGM 到:", bgmUrl);
       const switchBGM = async () => {
         // 如果正在播放，先淡出
         if (!audio.paused) {
