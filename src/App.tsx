@@ -607,60 +607,73 @@ export default function App() {
     setVisitedTexts(prev => [...prev, `--- ${scene.title} ---`]);
   }, [currentSceneId]);
 
-  // Handle BGM
+  // 初始化音频实例（仅一次）
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.loop = true;
+    }
+  }, []);
+
+  // Handle BGM Change
   useEffect(() => {
     const scene = gameData.scenes[currentSceneId];
     const bgmUrl = SCENE_BGM_CONFIG[currentSceneId] || scene?.bgm;
     
-    if (!bgmUrl) return;
+    if (!bgmUrl || !audioRef.current) return;
 
-    const playBGM = async () => {
-      const newAudio = new Audio(bgmUrl);
-      newAudio.loop = true;
-      newAudio.volume = 0; // 从0开始淡入
-      newAudio.preload = "auto";
+    const audio = audioRef.current;
+    
+    // 检查 src 是否真的改变了
+    const normalizedTarget = new URL(bgmUrl, window.location.href).href;
+    const normalizedCurrent = audio.src ? new URL(audio.src, window.location.href).href : '';
 
-      // 先静音播放（浏览器通常允许静音自动播放）
-      newAudio.muted = true;
-
-      try {
-        await newAudio.play();
-        if (hasInteracted && !isMuted) {
-          newAudio.muted = false;
-          fadeAudio(newAudio, 0.4, 2000); // 淡入到40%音量
+    if (normalizedCurrent !== normalizedTarget) {
+      const switchBGM = async () => {
+        // 如果正在播放，先淡出
+        if (!audio.paused) {
+          fadeAudio(audio, 0, 500);
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
-      } catch (e) {
-        console.log("BGM blocked:", e);
-      }
 
-      // 淡出旧音乐
-      if (audioRef.current) {
-        const oldAudio = audioRef.current;
-        fadeAudio(oldAudio, 0, 1000);
-        setTimeout(() => oldAudio.pause(), 1000);
-      }
+        audio.src = bgmUrl;
+        audio.load();
+        audio.volume = 0;
+        audio.muted = !hasInteracted || isMuted;
 
-      audioRef.current = newAudio;
-    };
+        try {
+          await audio.play();
+          if (hasInteracted && !isMuted) {
+            audio.muted = false;
+            fadeAudio(audio, 0.4, 1500);
+          }
+        } catch (e) {
+          console.log("BGM play blocked:", e);
+        }
+      };
+      switchBGM();
+    }
+  }, [currentSceneId]);
 
-    playBGM();
-  }, [currentSceneId, hasInteracted, isMuted]);
-
-  // 静音同步
+  // Handle Interaction & Mute Sync
   useEffect(() => {
     if (!audioRef.current) return;
+    const audio = audioRef.current;
 
-    if (isMuted) {
-      fadeAudio(audioRef.current, 0, 500);
+    if (hasInteracted && !isMuted) {
+      if (audio.paused) {
+        audio.play().catch(() => {});
+      }
+      audio.muted = false;
+      fadeAudio(audio, 0.4, 1000);
+    } else {
+      fadeAudio(audio, 0, 500);
+      // 不要立即 pause，等淡出后再静音
       setTimeout(() => {
-        if (audioRef.current) audioRef.current.muted = true;
+        if (isMuted) audio.muted = true;
       }, 500);
-    } else if (hasInteracted) {
-      audioRef.current.muted = false;
-      audioRef.current.play().catch(() => {});
-      fadeAudio(audioRef.current, 0.4, 1000);
     }
-  }, [isMuted]);
+  }, [hasInteracted, isMuted]);
 
   useEffect(() => {
     setCurrentParaIndex(0);
@@ -1072,16 +1085,18 @@ export default function App() {
                 showEnding={false}
                 showStartTrigger={showStartTrigger}
                 onStart={() => {
+                  setHasInteracted(true);
                   resetGame();
                   setIsStarting(true);
-                  setHasInteracted(true);
                   
-                  // 强制解锁音频：在用户点击按钮的瞬间触发播放
+                  // 强制解锁音频
                   playSFX(SFX_ASSETS.CLICK, isMuted);
                   if (audioRef.current) {
-                    audioRef.current.muted = false;
-                    audioRef.current.play().catch(() => {});
-                    fadeAudio(audioRef.current, 0.4, 1000);
+                    const audio = audioRef.current;
+                    audio.muted = false;
+                    audio.play().then(() => {
+                      fadeAudio(audio, 0.4, 1000);
+                    }).catch(e => console.log("Manual play failed:", e));
                   }
                 }}
                 choices={activeChoices}
