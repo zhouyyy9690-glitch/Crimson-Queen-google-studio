@@ -67,9 +67,9 @@ export const fadeAudio = (audio: HTMLAudioElement, targetVolume: number, duratio
 /**
  * 播放单次音效
  */
-export const playSFX = (url: string, isMuted: boolean) => {
+export const playSFX = (url: string, isMuted: boolean, volume = 0.3) => {
   if (isMuted) return;
   const sfx = new Audio(url);
-  sfx.volume = 0.3; // SFX 默认音量
+  sfx.volume = volume;
   sfx.play().catch((e) => console.log("SFX play blocked:", e));
 };

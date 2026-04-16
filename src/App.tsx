@@ -26,12 +26,16 @@ import {
   Flower,
   Flower2,
   MapPin,
-  Map
+  Map,
+  MessageSquare,
+  Zap,
+  Music
 } from 'lucide-react';
 import { gameData } from './gameData';
 import { Scene, Stage, Choice, Character, Location as GameLocation, Paragraph } from './types';
 import { characters } from './characters';
 import { locations } from './locations';
+import { insights, Insight } from './insights';
 import { fadeAudio, playSFX, SCENE_BGM_CONFIG, SFX_ASSETS } from './audio';
 
 // Medieval Corner Decoration Component
@@ -152,6 +156,212 @@ const AnimalPattern = ({ type }: { type?: 'fox' | 'deer' | 'eagle' }) => {
 };
 
 // Scene Display Component to isolate state during transitions
+// Volume Mixer Component
+// Scene Display Component to isolate state during transitions
+// Volume Mixer Component
+const CandleFlame = ({ size = "md", isActive = false }: { size?: "sm" | "md", isActive?: boolean }) => (
+  <motion.div 
+    className={`relative flex items-center justify-center shrink-0 ${size === "sm" ? "w-2.5 h-4" : "w-3 h-5"}`}
+    animate={{ 
+      scaleY: isActive ? [1, 1.2, 0.9, 1.1, 1] : [1, 1.1, 0.95, 1.05, 1],
+      scaleX: isActive ? [1, 0.85, 1.15, 0.9, 1] : [1, 0.95, 1.05, 0.95, 1],
+      opacity: isActive ? [1, 0.7, 1, 0.8, 1] : [0.9, 0.7, 0.9, 0.8, 0.9],
+      rotate: isActive ? [0, -3, 3, -1.5, 0] : [0, -1, 1, -0.5, 0]
+    }}
+    transition={{ 
+      duration: isActive ? 2 : 4,
+      repeat: Infinity,
+      ease: "easeInOut"
+    }}
+  >
+    {/* Inner Flame Glow */}
+    <div className={`absolute inset-0 bg-amber-400 blur-[4px] rounded-full opacity-40 ${isActive ? 'animate-pulse' : ''}`} />
+    
+    <svg viewBox="0 0 10 16" className={`${isActive ? 'fill-amber-400' : 'fill-amber-600/80'} drop-shadow-[0_0_8px_rgba(245,158,11,0.6)] w-full h-full`}>
+      <path d="M5 16C5 16 0 14 0 9C0 5 5 0 5 0C5 0 10 5 10 9C10 14 5 16 5 16Z" />
+    </svg>
+    
+    {/* Core */}
+    <div className={`absolute top-[60%] w-1 h-1 bg-white blur-[1px] rounded-full ${isActive ? 'opacity-90' : 'opacity-40'}`} />
+  </motion.div>
+);
+
+const FlameSlider = ({ 
+  label, 
+  icon: Icon, 
+  value, 
+  onChange, 
+  delay 
+}: { 
+  label: string, 
+  icon: any, 
+  value: number, 
+  onChange: (v: number) => void,
+  delay: number
+}) => {
+  const [isDragging, setIsDragging] = useState(false);
+
+  return (
+    <motion.div 
+      initial={{ x: delay % 2 === 0 ? -20 : 20, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ delay }}
+      className="space-y-4 md:space-y-6"
+    >
+      <div className="flex justify-between items-end px-2 text-amber-700/80">
+        <div className="flex items-center gap-3 md:gap-4">
+          <Icon className="w-4 h-4 md:w-5 md:h-5" />
+          <span className="text-[10px] md:text-xs uppercase tracking-[0.3em] font-medium">{label}</span>
+        </div>
+        <span className="font-mono text-lg md:text-xl text-amber-600/60 leading-none">{Math.round(value * 100)}%</span>
+      </div>
+      
+      <div className="relative h-12 flex items-center group">
+        {/* The Track */}
+        <div className="absolute left-0 right-0 h-1 bg-amber-900/10 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-amber-900/40 via-amber-600/40 to-amber-400/20"
+            style={{ width: `${value * 100}%` }}
+          />
+        </div>
+
+        {/* The Flame Thumb */}
+        <div 
+          className="absolute top-1/2 -translate-y-1/2 pointer-events-none transition-transform duration-150 ease-out"
+          style={{ left: `calc(${value * 100}% - 12px)` }}
+        >
+          <div className="relative -top-1">
+            <CandleFlame size="md" isActive={isDragging} />
+            {/* Base of the flame light */}
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-amber-600/30 blur-sm rounded-full" />
+          </div>
+        </div>
+
+        {/* Invisible Real Input */}
+        <input 
+          type="range" 
+          min="0" 
+          max="1" 
+          step="0.01" 
+          value={value}
+          onChange={(e) => onChange(parseFloat(e.target.value))}
+          onMouseDown={() => setIsDragging(true)}
+          onMouseUp={() => setIsDragging(false)}
+          onTouchStart={() => setIsDragging(true)}
+          onTouchEnd={() => setIsDragging(false)}
+          className="relative w-full h-full opacity-0 cursor-pointer z-10"
+        />
+      </div>
+    </motion.div>
+  );
+};
+
+const VolumeMixer = ({ 
+  bgmVolume, 
+  sfxVolume, 
+  onBgmChange, 
+  onSfxChange, 
+  onClose 
+}: { 
+  bgmVolume: number; 
+  sfxVolume: number; 
+  onBgmChange: (val: number) => void;
+  onSfxChange: (val: number) => void;
+  onClose: () => void;
+}) => {
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[500] bg-[#0a0a0a] overflow-y-auto px-6 py-12 md:p-12"
+    >
+      <div className="min-h-full flex flex-col items-center justify-center relative">
+        {/* Background Textures */}
+        <div className="fixed inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-30 pointer-events-none" />
+        <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(217,119,6,0.05)_0%,rgba(0,0,0,0.9)_100%)] pointer-events-none" />
+        
+        {/* Ornate Frame */}
+        <div className="fixed inset-4 md:inset-16 border-2 border-double border-amber-900/20 pointer-events-none" />
+        <OrnateCorner position="tl" />
+        <OrnateCorner position="tr" />
+        <OrnateCorner position="bl" />
+        <OrnateCorner position="br" />
+
+        {/* Close Button - Responsive Position */}
+        <button 
+          onClick={onClose}
+          className="fixed top-6 right-6 md:top-12 md:right-12 z-50 group flex items-center gap-3 md:gap-4 text-neutral-500 hover:text-amber-500 transition-all cursor-pointer"
+        >
+          <span className="text-[8px] md:text-[10px] uppercase tracking-[0.4em] opacity-0 group-hover:opacity-100 transition-opacity hidden sm:inline">Return to Hersey</span>
+          <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center border border-amber-900/20 rounded-full group-hover:border-amber-600/40 group-active:scale-95 transition-all bg-[#0a0a0a]">
+            <X className="w-4 h-4 md:w-5 md:h-5" />
+          </div>
+        </button>
+
+        {/* Content Container */}
+        <div className="relative z-10 w-full max-w-xl text-center space-y-10 md:space-y-16 py-8">
+          <header className="space-y-4">
+            <motion.div
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <h2 className="font-display text-xl md:text-3xl uppercase tracking-[0.5em] text-amber-600 drop-shadow-[0_0_15px_rgba(217,119,6,0.3)]">
+                Audio Ritual
+              </h2>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="flex items-center justify-center gap-2 md:gap-4"
+            >
+              <div className="h-px w-8 md:w-12 bg-amber-900/30" />
+              <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] md:tracking-[0.3em] text-neutral-500 max-w-[200px] md:max-w-none">Harmonize the atmosphere of your journey</p>
+              <div className="h-px w-8 md:w-12 bg-amber-900/30" />
+            </motion.div>
+          </header>
+
+          <div className="space-y-10 md:space-y-12">
+            <FlameSlider 
+              label="BGM Volume" 
+              icon={Music} 
+              value={bgmVolume} 
+              onChange={onBgmChange} 
+              delay={0.5} 
+            />
+            <FlameSlider 
+              label="SFX Volume" 
+              icon={Zap} 
+              value={sfxVolume} 
+              onChange={onSfxChange} 
+              delay={0.6} 
+            />
+          </div>
+
+          <footer className="pt-8 md:pt-12">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="flex flex-col items-center gap-4"
+            >
+              <div className="w-px h-12 md:h-16 bg-gradient-to-b from-amber-900/50 to-transparent" />
+              <div className="px-6 md:px-8 py-2 md:py-3 bg-amber-900/5 border border-amber-900/20 rounded-full backdrop-blur-sm">
+                <div className="text-[8px] md:text-[9px] uppercase tracking-[0.3em] md:tracking-[0.4em] text-amber-700/60 flex items-center gap-3">
+                  <div className="w-1 md:w-1.5 h-1 md:h-1.5 rounded-full bg-amber-600 animate-pulse shadow-[0_0_8px_rgba(217,119,6,0.5)]" />
+                  Master Audio Stream Active
+                </div>
+              </div>
+            </motion.div>
+          </footer>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 const SceneDisplay = ({ 
   sceneTitle, 
   stageId, 
@@ -166,12 +376,14 @@ const SceneDisplay = ({
   onChoiceClick,
   playSFX,
   isMuted,
+  sfxVolume,
   renderTextWithDialogue,
   isMenuExpanded,
   setIsMenuExpanded,
   setShowGallery,
   setShowProgress,
-  setShowMap
+  setShowMap,
+  sceneId
 }: { 
   sceneTitle: string, 
   stageId: string | null, 
@@ -184,38 +396,53 @@ const SceneDisplay = ({
   choices: Choice[],
   selectedChoice: Choice | null,
   onChoiceClick: (choice: Choice) => void,
-  playSFX: (url: string, isMuted: boolean) => void,
+  playSFX: (url: string, isMuted: boolean, volume?: number) => void,
   isMuted: boolean,
+  sfxVolume: number,
   renderTextWithDialogue: (text: string, isThought?: boolean) => TextSegment[],
   isMenuExpanded: boolean,
   setIsMenuExpanded: (v: boolean) => void,
   setShowGallery: (v: boolean) => void,
   setShowProgress: (v: boolean) => void,
-  setShowMap: (v: boolean) => void
+  setShowMap: (v: boolean) => void,
+  sceneId: string
 }) => {
   return (
-    <div className="space-y-12">
-      <div className="text-left">
+    <div className="space-y-8 lg:space-y-6 relative">
+      <div className="text-left relative z-10">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ 
+            opacity: 1, 
+            y: 0,
+          }}
           transition={{ duration: 0.8 }}
         >
-          <h2 className="font-display text-3xl md:text-5xl text-amber-600/90 tracking-wider leading-tight mb-2 text-center">
+          <motion.h2 
+            animate={{ 
+              textShadow: [
+                "0 0 8px rgba(217,119,6,0.2)",
+                "0 0 16px rgba(217,119,6,0.4)",
+                "0 0 8px rgba(217,119,6,0.2)"
+              ]
+            }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="font-display text-3xl md:text-5xl lg:text-4xl text-amber-600 tracking-wider leading-tight mb-2 text-center"
+          >
             {sceneTitle}
-            {stageId && <span className="block text-xs md:text-sm text-amber-900/40 mt-2 tracking-[0.5em] uppercase">— {stageId} —</span>}
-          </h2>
-          <div className="w-24 md:w-32 h-1 bg-gradient-to-r from-transparent via-amber-900/40 to-transparent mx-auto mb-8 relative">
+            {stageId && <span className="block text-xs md:text-sm text-amber-900/40 mt-1 tracking-[0.5em] uppercase">— {stageId} —</span>}
+          </motion.h2>
+          <div className="w-24 md:w-32 h-1 bg-gradient-to-r from-transparent via-amber-900/40 to-transparent mx-auto mb-6 lg:mb-4 relative">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rotate-45 border border-amber-900/60 bg-[#0a0a0a]" />
           </div>
         </motion.div>
 
-        <div className="min-h-[150px] md:min-h-[200px] flex items-center justify-center">
+        <div className="min-h-[120px] lg:min-h-[150px] flex items-center justify-center">
           {paraObj && (
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-lg md:text-2xl leading-relaxed font-serif text-justify whitespace-pre-wrap max-w-xl mx-auto px-2 md:px-0"
+              className="text-lg md:text-2xl lg:text-2xl leading-relaxed font-serif text-justify whitespace-pre-wrap max-w-xl lg:max-w-3xl mx-auto px-2 md:px-0"
             >
               <TypewriterText segments={renderTextWithDialogue(paraObj.text, paraObj.isThought)} />
             </motion.p>
@@ -354,7 +581,7 @@ const SceneDisplay = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="grid gap-6 pt-12 max-w-md mx-auto w-full"
+            className="grid lg:grid-cols-2 gap-4 lg:gap-6 pt-6 lg:pt-8 max-w-md lg:max-w-4xl mx-auto w-full"
           >
             {choices.map((choice, index) => (
               <motion.button
@@ -368,7 +595,7 @@ const SceneDisplay = ({
                 transition={{ duration: 0.5 }}
                 onClick={() => {
                   if (!selectedChoice) {
-                    playSFX(SFX_ASSETS.CLICK, isMuted);
+                    playSFX(SFX_ASSETS.CLICK, isMuted, sfxVolume);
                     onChoiceClick(choice);
                   }
                 }}
@@ -380,6 +607,16 @@ const SceneDisplay = ({
                   {choice.text}
                 </span>
                 <ChevronRight className="relative ml-auto w-4 h-4 md:w-5 md:h-5 text-amber-900/20 group-hover:text-amber-600 group-hover:translate-x-1 transition-all" />
+                
+                {/* Light Sweep Effect */}
+                <div className="absolute inset-0 overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <motion.div 
+                    initial={{ x: '-100%', skewX: -45 }}
+                    whileHover={{ x: '250%' }}
+                    transition={{ duration: 1, ease: "easeInOut" }}
+                    className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-amber-400/40 to-transparent"
+                  />
+                </div>
               </motion.button>
             ))}
           </motion.div>
@@ -420,17 +657,27 @@ const EndingDisplay = ({
       <OrnateCorner position="bl" />
       <OrnateCorner position="br" />
 
-      <div className="relative max-w-2xl w-full text-center space-y-12 md:space-y-16">
+      <div className="relative max-w-2xl lg:max-w-4xl w-full text-center space-y-12 md:space-y-16">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 1 }}
           className="space-y-4"
         >
-          <h2 className="font-display text-3xl md:text-6xl text-amber-600 tracking-[0.2em] uppercase">
+          <motion.h2 
+            animate={{ 
+              textShadow: [
+                "0 0 10px rgba(217,119,6,0.2)",
+                "0 0 25px rgba(217,119,6,0.5)",
+                "0 0 10px rgba(217,119,6,0.2)"
+              ]
+            }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="font-display text-3xl md:text-6xl lg:text-7xl text-amber-600 tracking-[0.2em] uppercase"
+          >
             ENDING：{scene.title}
-          </h2>
-          <div className="w-16 md:w-24 h-px bg-amber-900/40 mx-auto" />
+          </motion.h2>
+          <div className="w-16 md:w-24 lg:w-32 h-px bg-amber-900/40 mx-auto" />
         </motion.div>
 
         <div className="min-h-[200px] flex items-center justify-center w-full">
@@ -441,7 +688,7 @@ const EndingDisplay = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.8 }}
-              className="text-base md:text-xl text-neutral-400 leading-relaxed font-serif italic text-left whitespace-pre-wrap max-w-xl mx-auto px-8 border-l-2 border-amber-900/20"
+              className="text-base md:text-xl lg:text-2xl text-neutral-400 leading-relaxed font-serif italic text-left whitespace-pre-wrap max-w-xl lg:max-w-3xl mx-auto px-8 border-l-2 border-amber-900/20"
             >
               {currentPara && <TypewriterText segments={renderTextWithDialogue(currentPara.text, currentPara.isThought)} />}
             </motion.div>
@@ -492,10 +739,26 @@ export default function App() {
   const [unlockedLocations, setUnlockedLocations] = useState<Set<string>>(new Set());
   const [newlyUnlockedLocationIds, setNewlyUnlockedLocationIds] = useState<Set<string>>(new Set());
   const [seenLocationNames, setSeenLocationNames] = useState<Set<string>>(new Set());
+  const [unlockedInsights, setUnlockedInsights] = useState<Set<string>>(new Set());
   const [visitedTexts, setVisitedTexts] = useState<string[]>([]);
   const [isMuted, setIsMuted] = useState(false);
+  const [bgmVolume, setBgmVolume] = useState(0.4);
+  const [sfxVolume, setSfxVolume] = useState(0.3);
+  const [showVolumeMixer, setShowVolumeMixer] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerNotification = (title: string, type: 'ending' | 'character' | 'location' | 'insight') => {
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+    }
+    setNotification({ title, visible: true, type });
+    notificationTimeoutRef.current = setTimeout(() => {
+      setNotification(prev => ({ ...prev, visible: false }));
+      notificationTimeoutRef.current = null;
+    }, 5000); // Set to 5 seconds for all types
+  };
 
   // 极简初始化：确保 Audio 实例在组件生命周期内唯一且尽早创建
   if (!audioRef.current && typeof Audio !== 'undefined') {
@@ -528,7 +791,7 @@ export default function App() {
     locations.find(l => l.id === selectedLocationId),
     [selectedLocationId]
   );
-  const [notification, setNotification] = useState<{title: string, visible: boolean, type?: 'ending' | 'character' | 'location'}>({ title: '', visible: false });
+  const [notification, setNotification] = useState<{title: string, visible: boolean, type?: 'ending' | 'character' | 'location' | 'insight'}>({ title: '', visible: false });
 
   // Endings are now session-only (cleared on refresh/close)
   const saveEnding = (id: string, title: string, text: string) => {
@@ -551,6 +814,7 @@ export default function App() {
       seenCharacterNames: Array.from(seenCharacterNames),
       unlockedLocations: Array.from(unlockedLocations),
       seenLocationNames: Array.from(seenLocationNames),
+      unlockedInsights: Array.from(unlockedInsights),
       visitedTexts,
       timestamp: new Date().toISOString()
     };
@@ -571,6 +835,7 @@ export default function App() {
       if (data.seenCharacterNames) setSeenCharacterNames(new Set(data.seenCharacterNames));
       if (data.unlockedLocations) setUnlockedLocations(new Set(data.unlockedLocations));
       if (data.seenLocationNames) setSeenLocationNames(new Set(data.seenLocationNames));
+      if (data.unlockedInsights) setUnlockedInsights(new Set(data.unlockedInsights));
       setVisitedTexts(data.visitedTexts);
       setIsStarting(true);
       setShowProgress(false);
@@ -697,7 +962,7 @@ export default function App() {
         audio.play().catch(() => {});
       }
       audio.muted = false;
-      fadeAudio(audio, 0.4, 1000);
+      fadeAudio(audio, bgmVolume, 1000);
     } else {
       fadeAudio(audio, 0, 500);
       // 不要立即 pause，等淡出后再静音
@@ -705,7 +970,7 @@ export default function App() {
         if (isMuted) audio.muted = true;
       }, 500);
     }
-  }, [hasInteracted, isMuted]);
+  }, [hasInteracted, isMuted, bgmVolume]);
 
   useEffect(() => {
     setCurrentParaIndex(0);
@@ -792,12 +1057,7 @@ export default function App() {
           next.add(char.name);
           return next;
         });
-        setNotification({ 
-          title: `${char.name} 已解锁`, 
-          visible: true, 
-          type: 'character' 
-        });
-        setTimeout(() => setNotification(prev => ({ ...prev, visible: false })), 4000);
+        triggerNotification(char.name, 'character');
       }
     });
 
@@ -820,12 +1080,20 @@ export default function App() {
           next.add(loc.name);
           return next;
         });
-        setNotification({ 
-          title: `${loc.name} 已解锁`, 
-          visible: true, 
-          type: 'location' 
+        triggerNotification(loc.name, 'location');
+      }
+    });
+
+    // Insight unlocks (见闻)
+    insights.forEach(insight => {
+      const isMatch = insight.matchPatterns.some(p => currentText.includes(p));
+      if (!unlockedInsights.has(insight.id) && isMatch) {
+        setUnlockedInsights(prev => {
+          const next = new Set(prev);
+          next.add(insight.id);
+          return next;
         });
-        setTimeout(() => setNotification(prev => ({ ...prev, visible: false })), 4000);
+        triggerNotification(insight.title, 'insight');
       }
     });
   }, [currentParaIndex, currentSceneId, isStarting, activeParagraphs]);
@@ -835,13 +1103,13 @@ export default function App() {
     
     // Play SFX if provided in choice data
     if (choice.sfx) {
-      playSFX(choice.sfx, isMuted);
+      playSFX(choice.sfx, isMuted, sfxVolume);
     }
 
     if (choice.explanation) {
       // 如果是初始场景的选择（狐狸/红鹿/黑鹰），播放开门声
       if (currentSceneId === 'start') {
-        playSFX(SFX_ASSETS.DOOR_OPEN, isMuted);
+        playSFX(SFX_ASSETS.DOOR_OPEN, isMuted, sfxVolume);
       }
       setTimeout(() => setShowExplanation(true), 800);
     } else {
@@ -1056,9 +1324,9 @@ export default function App() {
             renderTextWithDialogue={renderTextWithDialogue}
           />
         ) : (
-          <main key="main-content" className="relative max-w-2xl mx-auto px-6 md:px-8 py-12 md:py-24 flex flex-col min-h-screen">
-        <div className="absolute inset-2 md:inset-4 border-[1px] border-amber-900/20 pointer-events-none" />
-        <div className="absolute inset-4 md:inset-6 border-[1px] border-amber-900/10 pointer-events-none" />
+          <main key="main-content" className="relative max-w-2xl lg:max-w-5xl xl:max-w-6xl mx-auto px-6 md:px-12 lg:px-24 py-12 lg:py-16 flex flex-col min-h-screen transition-all duration-700">
+        <div className="absolute inset-2 md:inset-4 lg:inset-8 border-[1px] border-amber-900/20 pointer-events-none" />
+        <div className="absolute inset-4 md:inset-6 lg:inset-12 border-[1px] border-amber-900/10 pointer-events-none" />
         
         <OrnateCorner position="tl" />
         <OrnateCorner position="tr" />
@@ -1066,38 +1334,49 @@ export default function App() {
         <OrnateCorner position="br" />
 
         {/* Header */}
-        <header className="mb-12 md:mb-16 flex items-center justify-between border-b-2 border-double border-amber-900/30 pb-6 relative z-10">
-          <div className="flex items-center gap-2 md:gap-4">
-            <Scroll className="w-4 h-4 md:w-5 md:h-5 text-amber-700/60" />
-            <span className="font-display text-[10px] md:text-sm tracking-[0.2em] md:tracking-[0.3em] text-amber-700/80 uppercase">
-              Chronicles of Hersey
+        <header className="mb-6 lg:mb-10 flex items-center justify-between border-b-2 border-double border-amber-900/30 pb-3 lg:pb-5 relative z-10 gap-2">
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
+            <Scroll className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-700/60" />
+            <span className="font-display text-[9px] md:text-sm tracking-[0.15em] md:tracking-[0.3em] text-amber-700/80 uppercase truncate max-w-[100px] md:max-w-none">
+              Chronicles
             </span>
           </div>
-          <div className="flex items-center gap-2 md:gap-4">
+          
+          <div className="flex items-center gap-2 md:gap-4 overflow-x-auto no-scrollbar">
+            <button 
+              onClick={() => setShowVolumeMixer(!showVolumeMixer)}
+              className="group flex items-center gap-1.5 md:gap-2 text-[8px] md:text-[10px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-neutral-600 hover:text-amber-600 transition-all cursor-pointer shrink-0"
+            >
+              <Music className="w-2.5 h-2.5 md:w-3 h-3 group-hover:drop-shadow-[0_0_3px_rgba(217,119,6,0.8)] transition-all" />
+              <span className="hidden sm:inline">Mixer</span>
+            </button>
+            
             <button 
               onClick={() => setIsMuted(!isMuted)}
-              className="group flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-neutral-600 hover:text-amber-600 transition-all cursor-pointer"
+              className="group flex items-center gap-1.5 md:gap-2 text-[8px] md:text-[10px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-neutral-600 hover:text-amber-600 transition-all cursor-pointer shrink-0"
             >
               {isMuted ? (
-                <VolumeX className="w-3 h-3 group-hover:drop-shadow-[0_0_3px_rgba(217,119,6,0.8)] transition-all" />
+                <VolumeX className="w-2.5 h-2.5 md:w-3 h-3 group-hover:drop-shadow-[0_0_3px_rgba(217,119,6,0.8)] transition-all" />
               ) : (
-                <Volume2 className="w-3 h-3 group-hover:drop-shadow-[0_0_3px_rgba(217,119,6,0.8)] transition-all" />
+                <Volume2 className="w-2.5 h-2.5 md:w-3 h-3 group-hover:drop-shadow-[0_0_3px_rgba(217,119,6,0.8)] transition-all" />
               )}
-              {isMuted ? 'Muted' : 'Music'}
+              <span className="hidden sm:inline">{isMuted ? 'Muted' : 'Music'}</span>
             </button>
+
             <button 
               onClick={() => setShowHistory(!showHistory)}
-              className="group flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-neutral-600 hover:text-amber-600 transition-all cursor-pointer"
+              className="group flex items-center gap-1.5 md:gap-2 text-[8px] md:text-[10px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-neutral-600 hover:text-amber-600 transition-all cursor-pointer shrink-0"
             >
-              <History className="w-3 h-3 group-hover:drop-shadow-[0_0_3px_rgba(217,119,6,0.8)] transition-all" />
-              History
+              <History className="w-2.5 h-2.5 md:w-3 h-3 group-hover:drop-shadow-[0_0_3px_rgba(217,119,6,0.8)] transition-all" />
+              <span className="hidden sm:inline">Log</span>
             </button>
+
             <button 
               onClick={returnToTitle}
-              className="group flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-neutral-600 hover:text-amber-600 transition-all cursor-pointer"
+              className="group flex items-center gap-1.5 md:gap-2 text-[8px] md:text-[10px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-neutral-600 hover:text-amber-600 transition-all cursor-pointer shrink-0"
             >
-              <RotateCcw className="w-3 h-3 group-hover:rotate-[-45deg] group-hover:drop-shadow-[0_0_3px_rgba(217,119,6,0.8)] transition-all" />
-              Title
+              <RotateCcw className="w-2.5 h-2.5 md:w-3 h-3 group-hover:rotate-[-45deg] group-hover:drop-shadow-[0_0_3px_rgba(217,119,6,0.8)] transition-all" />
+              <span className="hidden sm:inline">Title</span>
             </button>
           </div>
         </header>
@@ -1126,11 +1405,11 @@ export default function App() {
                   setIsStarting(true);
                   
                   // 强制解锁音频：在用户点击的瞬间执行 play()
-                  playSFX(SFX_ASSETS.CLICK, isMuted);
+                  playSFX(SFX_ASSETS.CLICK, isMuted, sfxVolume);
                   if (audioRef.current) {
                     const audio = audioRef.current;
                     audio.muted = false;
-                    audio.volume = 0.4;
+                    audio.volume = bgmVolume;
                     audio.play()
                       .then(() => console.log("✅ 音频成功解锁"))
                       .catch(e => console.log("❌ 仍然被拦截", e));
@@ -1141,12 +1420,14 @@ export default function App() {
                 onChoiceClick={handleChoiceClick}
                 playSFX={playSFX}
                 isMuted={isMuted}
+                sfxVolume={sfxVolume}
                 renderTextWithDialogue={renderTextWithDialogue}
                 isMenuExpanded={isMenuExpanded}
                 setIsMenuExpanded={setIsMenuExpanded}
                 setShowGallery={setShowGallery}
                 setShowProgress={setShowProgress}
                 setShowMap={setShowMap}
+                sceneId={currentSceneId}
               />
               
               {!showChoices && !showStartTrigger && activeParagraphs.length > 1 && currentParaIndex < activeParagraphs.length - 1 && (
@@ -1203,14 +1484,37 @@ export default function App() {
               initial={{ opacity: 0, y: -50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -50 }}
-              className="fixed top-8 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 bg-neutral-900 border-2 border-amber-600 shadow-[0_0_30px_rgba(217,119,6,0.2)] flex items-center gap-4"
+              className={`fixed top-4 md:top-8 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 z-[200] px-4 py-3 md:px-8 md:py-4 bg-[#0d0d0d] border-b-2 md:border-2 shadow-[0_4px_30px_rgba(0,0,0,0.5)] flex items-center justify-center md:justify-start gap-3 md:gap-4 backdrop-blur-md ${
+                notification.type === 'location' ? 'border-emerald-500' : 
+                notification.type === 'insight' ? 'border-indigo-400' : 
+                'border-amber-600'
+              }`}
             >
-              <div className="w-2 h-2 bg-amber-600 rounded-full animate-pulse" />
-              <span className="font-display text-amber-600 tracking-[0.2em] uppercase text-sm">
-                {notification.type === 'character' ? '人物解锁：' : notification.type === 'location' ? '地点解锁：' : '新的收录：'}
+              <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full animate-pulse shrink-0 ${
+                notification.type === 'location' ? 'bg-emerald-500' : 
+                notification.type === 'insight' ? 'bg-indigo-400' : 
+                'bg-amber-600'
+              }`} />
+              <span className={`font-display tracking-[0.15em] md:tracking-[0.2em] uppercase text-[10px] md:text-sm whitespace-nowrap overflow-hidden text-ellipsis ${
+                notification.type === 'location' ? 'text-emerald-500' : 
+                notification.type === 'insight' ? 'text-indigo-400' : 
+                'text-amber-600'
+              }`}>
+                <span className="opacity-60">
+                  {notification.type === 'character' ? '人物解锁 · ' : 
+                   notification.type === 'location' ? '地点解锁 · ' : 
+                   ''}
+                </span>
                 {notification.title}
+                <span className="opacity-60">
+                  {notification.type === 'insight' ? ' · 已记录' : ''}
+                </span>
               </span>
-              <div className="w-2 h-2 bg-amber-600 rounded-full animate-pulse" />
+              <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full animate-pulse shrink-0 ${
+                notification.type === 'location' ? 'bg-emerald-500' : 
+                notification.type === 'insight' ? 'bg-indigo-400' : 
+                'bg-amber-600'
+              }`} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -1346,6 +1650,18 @@ export default function App() {
           )}
         </AnimatePresence>
         <AnimatePresence>
+          {showVolumeMixer && (
+            <VolumeMixer 
+              bgmVolume={bgmVolume}
+              sfxVolume={sfxVolume}
+              onBgmChange={setBgmVolume}
+              onSfxChange={setSfxVolume}
+              onClose={() => setShowVolumeMixer(false)}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
           {showHistory && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -1353,7 +1669,7 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] bg-[#0a0a0a] p-4 md:p-8 overflow-y-auto"
             >
-              <div className="max-w-2xl mx-auto pt-12 md:pt-16">
+              <div className="max-w-2xl lg:max-w-4xl mx-auto pt-12 md:pt-16">
                 <div className="flex justify-between items-center mb-8 md:mb-12 border-b border-amber-900/20 pb-6">
                   <h3 className="font-display text-xl md:text-2xl text-amber-600 tracking-widest uppercase">Chronicle History</h3>
                   <button 
@@ -1393,7 +1709,7 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[100] bg-[#0a0a0a]/95 p-8 overflow-y-auto"
             >
-              <div className="max-w-4xl mx-auto pt-16">
+              <div className="max-w-4xl lg:max-w-6xl mx-auto pt-16">
                 <div className="flex justify-between items-center mb-12 border-b border-amber-900/20 pb-6">
                   <div className="flex items-center gap-4">
                     <Crown className="w-6 h-6 text-amber-600" />
@@ -1407,7 +1723,7 @@ export default function App() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-24">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-24">
                   {unlockedCharacters.size === 0 ? (
                     <div className="col-span-full py-24 text-center space-y-4">
                       <p className="text-neutral-600 italic text-lg">目前尚无人物记录。</p>
@@ -1749,12 +2065,43 @@ export default function App() {
                       <div className="space-y-6">
                         <div className="flex items-center gap-3 text-amber-900/60">
                           <Shield className="w-4 h-4" />
-                          <span className="text-xs uppercase tracking-widest">势力归属 · Faction</span>
+                          <span className="text-xs uppercase tracking-widest">领地掌权者 · Ruler</span>
                         </div>
                         <p className="text-neutral-300 font-serif italic text-lg leading-relaxed">
-                          {selectedLocation.faction}
+                          {selectedLocation.ruler || selectedLocation.faction}
                         </p>
                       </div>
+
+                      {insights.filter(ins => ins.locationId === selectedLocation.id).length > 0 && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3 text-amber-900/60">
+                            <MessageSquare className="w-4 h-4" />
+                            <span className="text-xs uppercase tracking-widest">领地传闻 · Rumors</span>
+                          </div>
+                          <ul className="space-y-4">
+                            {insights
+                              .filter(ins => ins.locationId === selectedLocation.id)
+                              .map((insight) => {
+                                if (!unlockedInsights.has(insight.id)) return null;
+                                return (
+                                  <li key={insight.id} className="text-neutral-400 font-serif italic text-sm leading-relaxed flex flex-col gap-1 border-l border-amber-900/10 pl-4 py-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-amber-600/60 text-[10px] uppercase tracking-widest font-display">{insight.title}</span>
+                                    </div>
+                                    <p className="text-neutral-300/80">{insight.description}</p>
+                                  </li>
+                                );
+                              })}
+                          </ul>
+                          {insights
+                            .filter(ins => ins.locationId === selectedLocation.id)
+                            .every(ins => !unlockedInsights.has(ins.id)) && (
+                            <p className="text-[10px] text-neutral-600 italic">暂无搜集到相关传闻。</p>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="h-px bg-amber-900/10" />
 
                       {selectedLocation.region && (
                         <div className="space-y-6">
@@ -1794,31 +2141,34 @@ export default function App() {
         </AnimatePresence>
 
         {/* Footer Info */}
-        <footer className="mt-24 pt-8 border-t border-amber-900/10 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] uppercase tracking-[0.3em] text-neutral-600 relative z-10">
-          <div className="flex items-center gap-2">
-            <Book className="w-3 h-3" />
-            <span>The Crimson Queen</span>
+        <footer className="mt-16 md:mt-24 pt-6 md:pt-8 border-t border-amber-900/10 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6 text-[8px] md:text-[10px] uppercase tracking-[0.2em] md:tracking-[0.3em] text-neutral-600 relative z-10">
+          <div className="flex items-center gap-2 shrink-0">
+            <Book className="w-2.5 h-2.5 md:w-3 h-3" />
+            <span className="truncate max-w-[150px] md:max-w-none">The Crimson Queen</span>
           </div>
-          <div className="flex gap-8 items-center">
+          
+          <div className="flex flex-wrap justify-center gap-3 md:gap-8 items-center w-full md:w-auto">
             <button
               onClick={() => setShowCompendium(true)}
-              className="group relative px-6 py-2 border border-amber-900/30 text-amber-900/60 hover:text-amber-600 hover:border-amber-700/50 transition-all uppercase tracking-[0.4em] text-[10px] cursor-pointer"
+              className="group relative px-3 py-1.5 md:px-6 md:py-2 border border-amber-900/30 text-amber-900/60 hover:text-amber-600 hover:border-amber-700/50 transition-all uppercase tracking-[0.2em] md:tracking-[0.4em] text-[7px] md:text-[10px] cursor-pointer flex-1 md:flex-none text-center"
             >
-              <div className="flex items-center gap-3">
-                <Shield className="w-3 h-3" />
-                人物志 · Compendium
+              <div className="flex items-center justify-center gap-1.5 md:gap-3">
+                <Shield className="w-2.5 h-2.5 md:w-3 h-3" />
+                <span className="whitespace-nowrap">人物志 · Compendium</span>
               </div>
             </button>
+            
             <button
               onClick={() => setShowMap(true)}
-              className="group relative px-6 py-2 border border-emerald-900/30 text-emerald-900/60 hover:text-emerald-500 hover:border-emerald-700/50 transition-all uppercase tracking-[0.4em] text-[10px] cursor-pointer"
+              className="group relative px-3 py-1.5 md:px-6 md:py-2 border border-emerald-900/30 text-emerald-900/60 hover:text-emerald-500 hover:border-emerald-700/50 transition-all uppercase tracking-[0.2em] md:tracking-[0.4em] text-[7px] md:text-[10px] cursor-pointer flex-1 md:flex-none text-center"
             >
-              <div className="flex items-center gap-3">
-                <Scroll className="w-3 h-3" />
-                世界地图 · World Map
+              <div className="flex items-center justify-center gap-1.5 md:gap-3">
+                <Scroll className="w-2.5 h-2.5 md:w-3 h-3" />
+                <span className="whitespace-nowrap">地图 · World Map</span>
               </div>
             </button>
-            <span className="text-amber-900/40">{currentScene.id}</span>
+            
+            <span className="text-amber-900/30 text-[7px] md:text-[9px] shrink-0">{currentScene.id}</span>
           </div>
         </footer>
           </main>

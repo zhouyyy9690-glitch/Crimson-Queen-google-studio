@@ -61,6 +61,7 @@ export interface Location {
   name: string;
   faction: string;
   description: string;
+  ruler?: string;
   x: number; // 0-100 percentage
   y: number; // 0-100 percentage
   path?: 'fox' | 'deer' | 'eagle' | 'all';
