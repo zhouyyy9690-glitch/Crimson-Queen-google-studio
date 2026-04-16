@@ -10,8 +10,9 @@
 const SILENT_SOUND = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
 
 export const BGM_ASSETS = {
-  // 使用绝对路径指向 public 文件夹
-  MAIN_THEME: "/audio/bgm_main.mp3",
+  // 临时使用测试音乐，验证播放逻辑是否已修复
+  // 验证成功后，请将其改回 "/audio/bgm_main.mp3"
+  MAIN_THEME: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
   
   // 推荐：教堂/神秘感 (仪式/重要转折)
   MYSTERY: SILENT_SOUND, 

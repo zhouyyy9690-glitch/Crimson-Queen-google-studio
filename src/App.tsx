@@ -647,30 +647,40 @@ export default function App() {
     if (normalizedCurrent !== normalizedTarget) {
       console.log("🎵 尝试切换 BGM 到:", bgmUrl);
       const switchBGM = async () => {
-        // 如果正在播放，先淡出
-        if (!audio.paused) {
-          fadeAudio(audio, 0, 500);
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-
-        audio.src = bgmUrl;
-        // 显式设置类型并重新加载，解决 "no supported sources" 错误
-        if (bgmUrl.endsWith('.mp3')) {
-          audio.type = 'audio/mpeg';
-        }
-        audio.load(); 
-        
-        audio.volume = 0;
-        audio.muted = !hasInteracted || isMuted;
-
         try {
-          await audio.play();
-          if (hasInteracted && !isMuted) {
-            audio.muted = false;
-            fadeAudio(audio, 0.4, 1500);
+          // 如果正在播放，先淡出
+          if (!audio.paused) {
+            fadeAudio(audio, 0, 500);
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+
+          // 彻底重置音频对象，防止旧状态干扰
+          audio.pause();
+          audio.removeAttribute('src'); 
+          audio.load();
+
+          // 重新设置新源
+          audio.src = bgmUrl;
+          audio.load(); // 强制触发加载过程
+          
+          audio.volume = 0;
+          audio.muted = !hasInteracted || isMuted;
+
+          // 只有在用户交互后才尝试播放
+          if (hasInteracted) {
+            await audio.play();
+            if (!isMuted) {
+              audio.muted = false;
+              fadeAudio(audio, 0.4, 1500);
+            }
           }
         } catch (e) {
-          console.log("BGM play blocked:", e);
+          console.error("❌ BGM 播放失败详情:", {
+            error: e,
+            url: bgmUrl,
+            networkState: audio.networkState,
+            readyState: audio.readyState
+          });
         }
       };
       switchBGM();
