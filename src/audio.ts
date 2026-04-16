@@ -21,6 +21,8 @@ export const SFX_ASSETS = {
   // 换回您原始的按钮音效链接
   CLICK: "https://cdn.pixabay.com/audio/2022/03/15/audio_c8c8a73467.mp3",
   PAGE_TURN: SILENT_SOUND,
+  // 使用您提供的 Pixabay 直链
+  DOOR_OPEN: "https://cdn.pixabay.com/download/audio/2025/09/28/audio_a08fbaf339.mp3?filename=soundreality-opening-door-411632.mp3",
 };
 
 // --- 2. 场景与 BGM 对应表 (Scene BGM Mapping) ---

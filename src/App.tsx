@@ -839,6 +839,10 @@ export default function App() {
     }
 
     if (choice.explanation) {
+      // 如果是初始场景的选择（狐狸/红鹿/黑鹰），播放开门声
+      if (currentSceneId === 'start') {
+        playSFX(SFX_ASSETS.DOOR_OPEN, isMuted);
+      }
       setTimeout(() => setShowExplanation(true), 800);
     } else {
       setTimeout(() => proceedWithChoice(choice), 800);
