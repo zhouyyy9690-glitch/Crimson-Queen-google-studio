@@ -58,6 +58,7 @@ export interface Character {
   unlockedAt: string | string[];
   iconType: 'fox' | 'sword' | 'eagle' | 'bear' | 'tiger' | 'ring' | 'user' | 'scroll' | 'shield' | 'heart';
   path?: 'fox' | 'deer' | 'eagle' | 'all' | 'common';
+  matchNames?: string[];
 }
 
 export interface Location {

@@ -189,7 +189,7 @@ export const nightScenes: Record<string, Scene> = {
       { text: '塞普迪莫斯学士笑了。“你是只狡猾的小狐狸，殿下。”', isDialogue: true },
       { text: '你有些不好意思。我怎么可能瞒得过学士？', isThought: true },
       { text: '“哈蒙德家族是西境大公爵暨全境守护，但征服王国还有东、南、北三境大公爵暨全境守护。”学士慢悠悠地说，“瓦兰提尔·诺恩是南境总主教，但他的命令是从凯斯大教堂——也就是王城那边来的。”', isDialogue: true },
-      { text: '“所以，我的小殿下，不一定是哈蒙德。昆提斯·德罗斯特也在关注您的行动。”', isDialogue: true },
+      { text: '“所以，我的小殿下，不一定是哈蒙德。[C:昆提斯·德罗斯特]也在关注您的行动。”', isDialogue: true },
       { text: '“......征服王国大主教？为什么？”', isDialogue: true },
       { text: '“因为这是大人游戏胜利的重要条件。”', isDialogue: true },
       { text: '渡鸦叫了一声。你这才意识到，学士的窗户没有关上。\n春夜的风撩动了你的头发，月光如水，淌满整个窗台。' },
@@ -272,7 +272,6 @@ export const nightScenes: Record<string, Scene> = {
         condition: 'talkedToNun === true && talkedToKnight === true && talkedToScholar === true && toldFain === false'
       }
       // 注意：如果三人全谈且 toldFain === true，不会显示任何选项，需要在组件中自动跳转到 F29-AutoKnight。
-      // 建议在 App.tsx 中处理：当进入此场景且满足 (talkedToNun && talkedToKnight && talkedToScholar && toldFain) 时，直接调用 setCurrentSceneId('F29-AutoKnight')
     ]
   },
 

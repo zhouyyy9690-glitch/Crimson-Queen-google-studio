@@ -20,7 +20,8 @@ export const characters: Character[] = [
     ],
     unlockedAt: 'F2-Bishop',
     iconType: 'fox',
-    path: 'fox'
+    path: 'fox',
+    matchNames: ['凯瑟琳']
   },
   // Fox Path Characters
   {
@@ -112,7 +113,8 @@ export const characters: Character[] = [
     description: '翠谷地区的主教，与瓦兰提尔·诺恩一同到来。',
     unlockedAt: ['fox', 'Yourdecision'],
     iconType: 'user',
-    path: 'fox'
+    path: 'fox',
+    matchNames: ['奥德里克']
   },
   {
     id: 'knight',

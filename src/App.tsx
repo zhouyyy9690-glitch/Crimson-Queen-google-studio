@@ -269,14 +269,15 @@ const EmbossedInitial = ({ nameEn, className = "" }: { nameEn: string, className
   return (
     <div className={`font-display flex items-center justify-center select-none ${className}`}>
       <span 
-        className="text-amber-900/40 drop-shadow-[1px_1px_0px_rgba(255,255,255,0.05)]"
+        className="text-transparent"
         style={{
           textShadow: `
-            1px 1.5px 1px rgba(0,0,0,0.8),
-            -0.5px -0.5px 0.5px rgba(255,255,255,0.1),
-            0 0 10px rgba(217,119,6,0.1)
+            1.5px 1.5px 1px rgba(0,0,0,0.9),
+            -0.5px -0.5px 1px rgba(255,255,255,0.15),
+            0 0 5px rgba(217,119,6,0.05)
           `,
-          filter: "drop-shadow(2px 2px 1px rgba(0,0,0,0.4)) contrast(1.2) brightness(0.8)"
+          WebkitTextStroke: "0.5px rgba(217,119,6,0.1)",
+          filter: "drop-shadow(2px 2px 3px rgba(0,0,0,0.4))"
         }}
       >
         {initial}
@@ -692,7 +693,7 @@ const SceneDisplay = ({
                 initial={{ opacity: 0 }}
                 animate={{ 
                   opacity: selectedChoice ? (selectedChoice === choice ? 1 : 0) : 1,
-                  scale: selectedChoice === choice ? 1.05 : 1,
+                  scale: 1,
                   x: selectedChoice && selectedChoice !== choice ? (index % 2 === 0 ? -20 : 20) : 0
                 }}
                 transition={{ duration: 0.5 }}
@@ -703,23 +704,12 @@ const SceneDisplay = ({
                   }
                 }}
                 disabled={!!selectedChoice}
-                className={`group relative flex items-center gap-4 md:gap-6 p-4 md:p-6 rounded-sm border-2 border-amber-900/20 bg-neutral-900/20 transition-all text-left overflow-hidden ${!selectedChoice ? 'hover:bg-amber-950/10 hover:border-amber-950/40 hover:border-amber-900/60 cursor-pointer' : ''}`}
+                className={`group relative flex items-center gap-4 md:gap-6 p-4 md:p-6 rounded-sm border-2 border-amber-900/20 bg-transparent transition-all text-left overflow-hidden ${!selectedChoice ? 'hover:border-amber-500/60 cursor-pointer' : ''}`}
               >
-                <div className="absolute inset-0 bg-amber-600/0 group-hover:bg-amber-600/5 transition-colors" />
-                <span className="relative text-neutral-400 group-hover:text-neutral-100 font-display text-base md:text-xl tracking-widest uppercase transition-colors">
+                <span className="relative text-neutral-500 group-hover:text-amber-500 font-display text-base md:text-xl tracking-[0.2em] uppercase transition-all duration-500">
                   {choice.text}
                 </span>
-                <ChevronRight className="relative ml-auto w-4 h-4 md:w-5 md:h-5 text-amber-900/20 group-hover:text-amber-600 group-hover:translate-x-1 transition-all" />
-                
-                {/* Light Sweep Effect */}
-                <div className="absolute inset-0 overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <motion.div 
-                    initial={{ x: '-100%', skewX: -45 }}
-                    whileHover={{ x: '250%' }}
-                    transition={{ duration: 1, ease: "easeInOut" }}
-                    className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-amber-400/40 to-transparent"
-                  />
-                </div>
+                <ChevronRight className="relative ml-auto w-4 h-4 md:w-5 md:h-5 text-amber-900/20 group-hover:text-amber-500 group-hover:translate-x-1 transition-all" />
               </motion.button>
             ))}
           </motion.div>
@@ -888,10 +878,8 @@ export default function App() {
   const [showCompendium, setShowCompendium] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [unlockedCharacters, setUnlockedCharacters] = useState<Set<string>>(new Set());
-  const [newlyUnlockedCharacterIds, setNewlyUnlockedCharacterIds] = useState<Set<string>>(new Set());
   const [seenCharacterNames, setSeenCharacterNames] = useState<Set<string>>(new Set());
   const [unlockedLocations, setUnlockedLocations] = useState<Set<string>>(new Set());
-  const [newlyUnlockedLocationIds, setNewlyUnlockedLocationIds] = useState<Set<string>>(new Set());
   const [seenLocationNames, setSeenLocationNames] = useState<Set<string>>(new Set());
   const [unlockedInsights, setUnlockedInsights] = useState<Set<string>>(new Set());
   const [visitedTexts, setVisitedTexts] = useState<string[]>([]);
@@ -1204,64 +1192,47 @@ export default function App() {
   const activeChoices = (currentStage ? currentStage.choices : (currentScene.choices || []))
     .filter(choice => checkCondition(choice.condition));
 
-  // Scan current paragraph for character and location unlocks
+  // Ref to track current paragraph for highlighting lifecycle
+  const lastProcessedParaKey = useRef<string>("");
+
+  // Combined effect to handle unlocking
   useEffect(() => {
     const currentPara = activeParagraphs[currentParaIndex];
     if (!currentPara) return;
 
-    // Only start recognition from fox path or deer path act1-p1 scenes
-    const isFoxPath = currentSceneId.startsWith('F') || currentPath === 'fox';
-    const isDeerPath = currentSceneId.startsWith('d') || currentPath === 'deer';
-    if (!isFoxPath && !isDeerPath) return;
+    // Unlocks still happen logically for the compendium
+    const isCommonScene = Object.keys(commonScenes).includes(currentSceneId);
+    if (isCommonScene) return;
 
     const currentText = currentPara.text;
 
-    // Character unlocks
+    // 3. Character unlocks
     characters.forEach(char => {
-      if (!unlockedCharacters.has(char.id) && currentText.includes(char.name)) {
+      const isMatch = currentText.includes(char.name);
+      if (!unlockedCharacters.has(char.id) && isMatch) {
         setUnlockedCharacters(prev => {
           const next = new Set(prev);
           next.add(char.id);
-          return next;
-        });
-        setNewlyUnlockedCharacterIds(prev => {
-          const next = new Set(prev);
-          next.add(char.id);
-          return next;
-        });
-        setSeenCharacterNames(prev => {
-          const next = new Set(prev);
-          next.add(char.name);
           return next;
         });
         triggerNotification(char.name, 'character');
       }
     });
 
-    // Location unlocks
+    // 4. Location unlocks
     locations.forEach(loc => {
-      const isMatch = currentText.includes(loc.name) || (loc.matchNames?.some(m => currentText.includes(m)));
+      const isMatch = currentText.includes(loc.name);
       if (!unlockedLocations.has(loc.id) && isMatch) {
         setUnlockedLocations(prev => {
           const next = new Set(prev);
           next.add(loc.id);
           return next;
         });
-        setNewlyUnlockedLocationIds(prev => {
-          const next = new Set(prev);
-          next.add(loc.id);
-          return next;
-        });
-        setSeenLocationNames(prev => {
-          const next = new Set(prev);
-          next.add(loc.name);
-          return next;
-        });
         triggerNotification(loc.name, 'location');
       }
     });
 
-    // Insight unlocks (见闻)
+    // 5. Insight unlocks
     insights.forEach(insight => {
       const isMatch = insight.matchPatterns.some(p => currentText.includes(p));
       if (!unlockedInsights.has(insight.id) && isMatch) {
@@ -1273,7 +1244,7 @@ export default function App() {
         triggerNotification(insight.title, 'insight');
       }
     });
-  }, [currentParaIndex, currentSceneId, isStarting, activeParagraphs]);
+  }, [currentParaIndex, currentSceneId, isStarting, activeParagraphs, unlockedCharacters, unlockedLocations]);
 
   const handleChoiceClick = (choice: Choice) => {
     setSelectedChoice(choice);
@@ -1370,21 +1341,10 @@ export default function App() {
     }
   };
 
-  // Clear newly unlocked highlights when moving to next paragraph or scene
-  // We use a ref to track the last seen para/scene to avoid clearing immediately after unlocking
-  const lastParaRef = useRef<string>("");
-  
-  useEffect(() => {
-    const paraKey = `${currentSceneId}-${currentParaIndex}`;
-    if (lastParaRef.current !== paraKey) {
-      setNewlyUnlockedCharacterIds(new Set());
-      setNewlyUnlockedLocationIds(new Set());
-      lastParaRef.current = paraKey;
-    }
-  }, [currentParaIndex, currentSceneId]);
+  // Clear newly unlocked highlights when moving to next paragraph or scene handled in main effect above
 
   const renderTextWithDialogue = (text: string, isThought?: boolean): TextSegment[] => {
-    // Split by dialogue markers
+    // 1. First split by dialogue markers
     const parts = text.split(/([“”""][^“”""]*[“”""])/g);
     const segments: TextSegment[] = [];
     
@@ -1399,71 +1359,33 @@ export default function App() {
           isDialogue: true
         });
       } else {
-        // Highlighting Logic for keywords (Always highlight, not just on trigger, except for common scenes)
-        let subSegments: TextSegment[] = [{ text: part, isDialogue: false }];
-        const isCommonScene = Object.keys(commonScenes).includes(currentSceneId);
+        // 2. Process Manual Highlighting Tags in narrative text
+        // Pattern: [C:Name] for Characters, [L:Location] for Locations
+        const tagParts = part.split(/(\[C:[^\]]+\]|\[L:[^\]]+\])/g);
+        
+        tagParts.forEach(tagPart => {
+          if (!tagPart) return;
 
-        if (!isCommonScene) {
-          // Character Keywords
-          characters.forEach(char => {
-            const newSubSegments: TextSegment[] = [];
-            subSegments.forEach(seg => {
-              if (seg.isDialogue || seg.className?.includes('text-amber-600') || seg.className?.includes('text-emerald-500')) {
-                newSubSegments.push(seg);
-                return;
-              }
-              const nameParts = seg.text.split(new RegExp(`(${char.name})`, 'g'));
-              nameParts.forEach(namePart => {
-                if (namePart === char.name) {
-                  newSubSegments.push({
-                    text: namePart,
-                    className: "text-amber-600 font-bold",
-                    isDialogue: false
-                  });
-                } else if (namePart) {
-                  newSubSegments.push({ text: namePart, isDialogue: false });
-                }
-              });
-            });
-            subSegments = newSubSegments;
-          });
-
-          // Location Keywords
-          locations.forEach(loc => {
-            const newSubSegments: TextSegment[] = [];
-            subSegments.forEach(seg => {
-              if (seg.isDialogue || seg.className?.includes('text-amber-600') || seg.className?.includes('text-emerald-500')) {
-                newSubSegments.push(seg);
-                return;
-              }
-
-              const locNames = [loc.name, ...(loc.matchNames || [])];
-              const pattern = new RegExp(`(${locNames.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g');
-              
-              const nameParts = seg.text.split(pattern);
-              nameParts.forEach(namePart => {
-                const matchedLocName = locNames.find(n => namePart === n);
-                if (matchedLocName) {
-                  newSubSegments.push({
-                    text: namePart,
-                    className: "text-emerald-500 font-bold",
-                    isDialogue: false
-                  });
-                } else if (namePart) {
-                  newSubSegments.push({ text: namePart, isDialogue: false });
-                }
-              });
-            });
-            subSegments = newSubSegments;
-          });
-        }
-
-        subSegments.forEach(seg => {
-          if (seg.className) {
-            segments.push(seg);
-          } else {
+          if (tagPart.startsWith('[C:') && tagPart.endsWith(']')) {
+            // Character Manual Highlight
+            const name = tagPart.substring(3, tagPart.length - 1);
             segments.push({
-              text: seg.text,
+              text: name,
+              className: "text-amber-600 font-bold",
+              isDialogue: false
+            });
+          } else if (tagPart.startsWith('[L:') && tagPart.endsWith(']')) {
+            // Location Manual Highlight
+            const locName = tagPart.substring(3, tagPart.length - 1);
+            segments.push({
+              text: locName,
+              className: "text-emerald-500 font-bold",
+              isDialogue: false
+            });
+          } else {
+            // Normal Text
+            segments.push({
+              text: tagPart,
               className: isThought 
                 ? "text-rose-400/90 font-serif italic font-medium tracking-wide" 
                 : "text-neutral-400 font-serif",
@@ -2007,7 +1929,7 @@ export default function App() {
                         <div className="relative group">
                           {/* Candlelight Glow Behind Avatar */}
                           <div className="absolute inset-0 bg-amber-600/10 blur-3xl animate-pulse rounded-full" />
-                          <div className="w-32 h-32 md:w-48 md:h-48 border-2 border-double border-amber-900/30 flex items-center justify-center relative bg-black/40 ring-1 ring-amber-600/5 group-hover:border-amber-600/40 transition-all duration-1000">
+                          <div className="w-32 h-32 md:w-48 md:h-48 border-2 border-double border-amber-900/30 flex items-center justify-center relative ring-1 ring-amber-600/5 group-hover:border-amber-600/40 transition-all duration-1000">
                              <div className="scale-[2.5] transition-all duration-1000 transform group-hover:scale-[2.6]">
                                 <EmbossedInitial nameEn={selectedCharacter.nameEn} className="w-full h-full text-4xl md:text-6xl" />
                              </div>
