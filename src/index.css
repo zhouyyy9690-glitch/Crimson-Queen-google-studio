@@ -5,4 +5,81 @@
   --font-serif: "Cormorant Garamond", serif;
   --font-display: "Cinzel", serif;
   --font-dialogue: "Almendra", serif;
+
+  @keyframes glow-pulse {
+    0%, 100% { text-shadow: 0 0 5px rgba(217, 119, 6, 0.3); }
+    50% { text-shadow: 0 0 15px rgba(217, 119, 6, 0.6); }
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbar for major browsers */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .ink-underline-amber {
+    position: relative;
+    display: inline-block;
+  }
+  .ink-underline-amber::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: radial-gradient(ellipse at center, var(--color-amber-900/40) 0%, transparent 80%);
+    filter: blur(1px);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 1.5s ease-out;
+  }
+  .ink-underline-amber.active::after {
+    transform: scaleX(1);
+  }
+
+  .ink-underline-emerald {
+    position: relative;
+    display: inline-block;
+  }
+  .ink-underline-emerald::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: radial-gradient(ellipse at center, var(--color-emerald-900/40) 0%, transparent 80%);
+    filter: blur(1px);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 1.5s ease-out;
+  }
+  .ink-underline-emerald.active::after {
+    transform: scaleX(1);
+  }
+}
+
+/* Custom Cursor Hide Default */
+html, body {
+  height: 100%;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  html, body, #root, *, *::before, *::after {
+    cursor: none !important;
+  }
+  
+  /* Ensure interactive elements don't show default cursor even during interaction */
+  button, a, input, select, textarea, [role="button"], 
+  button *, a *, [role="button"] *,
+  button:active, a:active, [role="button"]:active {
+    cursor: none !important;
+  }
 }

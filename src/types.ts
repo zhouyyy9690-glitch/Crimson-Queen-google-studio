@@ -27,6 +27,8 @@ export interface Paragraph {
   isThought?: boolean;
 }
 
+export type ParticleType = 'snow' | 'dust' | 'nature' | 'ink' | 'none';
+
 export interface Scene {
   id: string;
   title: string;
@@ -37,6 +39,7 @@ export interface Scene {
   choices?: Choice[];
   isEnding?: boolean;
   bgm?: string;
+  particleType?: ParticleType;
 }
 
 export interface CharacterUpdate {
@@ -48,6 +51,7 @@ export interface CharacterUpdate {
 export interface Character {
   id: string;
   name: string;
+  nameEn: string;
   title: string;
   description: string;
   updates?: CharacterUpdate[];

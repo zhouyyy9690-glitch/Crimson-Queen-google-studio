@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect, useMemo, useRef, WheelEvent } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState, useEffect, useMemo, useRef, WheelEvent, type ReactNode } from 'react';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'motion/react';
 import { 
   Book, 
   ChevronRight, 
@@ -32,13 +32,90 @@ import {
   Music
 } from 'lucide-react';
 import { gameData } from './gameData';
+import { commonScenes } from './data/01-commonScenes';
 import { Scene, Stage, Choice, Character, Location as GameLocation, Paragraph } from './types';
 import { characters } from './characters';
 import { locations } from './locations';
 import { insights, Insight } from './insights';
 import { fadeAudio, playSFX, SCENE_BGM_CONFIG, SFX_ASSETS } from './audio';
+import ParticleBackground from './components/ParticleBackground';
+import CustomCursor from './components/CustomCursor';
 
 // Medieval Corner Decoration Component
+// UI Component: Floating Clouds for Map
+const FloatingClouds = ({ count = 6 }: { count?: number }) => {
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden mix-blend-screen opacity-20">
+      {Array.from({ length: count }).map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{ 
+            x: `${Math.random() * 100}%`, 
+            y: `${Math.random() * 100}%`,
+            scale: 1 + Math.random() * 1.5,
+            opacity: 0.3 + Math.random() * 0.5
+          }}
+          animate={{ 
+            x: ['-20%', '120%'],
+          }}
+          transition={{ 
+            duration: 60 + Math.random() * 60, 
+            repeat: Infinity, 
+            ease: "linear",
+            delay: -Math.random() * 100
+          }}
+          className="absolute w-64 h-32 bg-white blur-[60px] rounded-[100%]"
+        />
+      ))}
+    </div>
+  );
+};
+
+// UI Component: Fog of War
+const MapFogOfWar = ({ unlockedLocations, locations }: { unlockedLocations: Set<string>, locations: any[] }) => {
+  return (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none z-30">
+      <defs>
+        <mask id="fog-mask">
+          <rect width="100%" height="100%" fill="white" />
+          {locations
+            .filter(loc => unlockedLocations.has(loc.id))
+            .map((loc) => (
+              <circle
+                key={`hole-${loc.id}`}
+                cx={`${loc.x}%`}
+                cy={`${loc.y}%`}
+                r="120"
+                fill="black"
+                className="blur-3xl"
+              />
+            ))}
+        </mask>
+      </defs>
+      <rect 
+        width="100%" 
+        height="100%" 
+        fill="#2a2a2a" 
+        mask="url(#fog-mask)" 
+        className="opacity-80 mix-blend-multiply"
+      />
+      {/* Dynamic Mist Layer */}
+      <rect 
+        width="100%" 
+        height="100%" 
+        fill="url(#mist-pattern)" 
+        mask="url(#fog-mask)" 
+        className="opacity-40"
+      />
+      <defs>
+        <pattern id="mist-pattern" x="0" y="0" width="200" height="200" patternUnits="userSpaceOnUse">
+          <circle cx="100" cy="100" r="80" fill="white" className="opacity-10 blur-2xl animate-pulse" />
+        </pattern>
+      </defs>
+    </svg>
+  );
+};
+
 const OrnateCorner = ({ position }: { position: 'tl' | 'tr' | 'bl' | 'br' }) => {
   const rotations = {
     tl: 'rotate-0',
@@ -75,59 +152,60 @@ interface TextSegment {
 }
 
 // Typewriter Component for Segments
-const TypewriterText = ({ segments, speed = 80, onComplete }: { segments: TextSegment[], speed?: number, onComplete?: () => void }) => {
-  const [dialogueCharCount, setDialogueCharCount] = useState(0);
-  const dialogueSegments = useMemo(() => segments.filter(s => s.isDialogue), [segments]);
-  const totalDialogueChars = useMemo(() => dialogueSegments.reduce((acc, s) => acc + s.text.length, 0), [dialogueSegments]);
+const TypewriterText = ({ segments, onComplete }: { segments: TextSegment[], onComplete?: () => void }) => {
+  const totalChars = useMemo(() => segments.reduce((acc, s) => acc + s.text.length, 0), [segments]);
 
   useEffect(() => {
-    setDialogueCharCount(0);
-    if (totalDialogueChars === 0) {
+    const timeout = setTimeout(() => {
       onComplete?.();
-      return;
-    }
+    }, totalChars * 50 + 1000); // Increased multiplier for slower speed
+    return () => clearTimeout(timeout);
+  }, [totalChars, onComplete]);
 
-    let count = 0;
-    const interval = setInterval(() => {
-      if (count < totalDialogueChars) {
-        count++;
-        setDialogueCharCount(count);
-      } else {
-        clearInterval(interval);
-        onComplete?.();
-      }
-    }, speed);
-    return () => clearInterval(interval);
-  }, [segments, speed, totalDialogueChars, onComplete]);
+  let runningCharIndex = 0;
 
-  let currentDialoguePos = 0;
   return (
-    <>
-      {segments.map((s, i) => {
-        if (!s.isDialogue) {
-          return <span key={i} className={s.className}>{s.text}</span>;
-        }
-
-        const start = currentDialoguePos;
-        const end = currentDialoguePos + s.text.length;
-        currentDialoguePos = end;
-
-        if (dialogueCharCount <= start) {
-          // Reserve space but hide
-          return <span key={i} className={`${s.className} opacity-0`}>{s.text}</span>;
-        }
+    <span className="inline">
+      {segments.map((seg, i) => {
+        const isChar = seg.className?.includes('text-amber-600');
+        const isLoc = seg.className?.includes('text-emerald-500');
+        const isDialogue = seg.isDialogue;
         
-        const visibleText = s.text.slice(0, dialogueCharCount - start);
-        const hiddenText = s.text.slice(dialogueCharCount - start);
-        
+        const charsInSeg = Array.from(seg.text);
+
         return (
-          <span key={i} className={s.className}>
-            {visibleText}
-            <span className="opacity-0">{hiddenText}</span>
+          <span 
+            key={i} 
+            className={`${seg.className || ''} inline relative`}
+          >
+            {charsInSeg.map((char, j) => {
+              const delay = runningCharIndex * 0.05; // Slower stagger (from 0.02 to 0.05)
+              runningCharIndex++;
+              
+              return (
+                <motion.span
+                  key={j}
+                  initial={{ opacity: 0, filter: "blur(12px)", y: 6 }} // More blur and shift
+                  animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+                  transition={{
+                    duration: 1.2, // Slower transition (from 0.8 to 1.2)
+                    delay: delay,
+                    ease: [0.2, 0, 0.2, 1]
+                  }}
+                  className={`inline-block whitespace-pre-wrap ${
+                    isDialogue ? 'drop-shadow-[0_0_8px_rgba(251,191,36,0.2)]' : ''
+                  } ${
+                    (isChar || isLoc) ? (isChar ? 'animate-[glow-pulse_3s_infinite]' : 'animate-[glow-pulse_4s_infinite]') : ''
+                  }`}
+                >
+                  {char}
+                </motion.span>
+              );
+            })}
           </span>
         );
       })}
-    </>
+    </span>
   );
 };
 
@@ -185,6 +263,27 @@ const CandleFlame = ({ size = "md", isActive = false }: { size?: "sm" | "md", is
     <div className={`absolute top-[60%] w-1 h-1 bg-white blur-[1px] rounded-full ${isActive ? 'opacity-90' : 'opacity-40'}`} />
   </motion.div>
 );
+
+const EmbossedInitial = ({ nameEn, className = "" }: { nameEn: string, className?: string }) => {
+  const initial = (nameEn || 'U').charAt(0).toUpperCase();
+  return (
+    <div className={`font-display flex items-center justify-center select-none ${className}`}>
+      <span 
+        className="text-amber-900/40 drop-shadow-[1px_1px_0px_rgba(255,255,255,0.05)]"
+        style={{
+          textShadow: `
+            1px 1.5px 1px rgba(0,0,0,0.8),
+            -0.5px -0.5px 0.5px rgba(255,255,255,0.1),
+            0 0 10px rgba(217,119,6,0.1)
+          `,
+          filter: "drop-shadow(2px 2px 1px rgba(0,0,0,0.4)) contrast(1.2) brightness(0.8)"
+        }}
+      >
+        {initial}
+      </span>
+    </div>
+  );
+};
 
 const FlameSlider = ({ 
   label, 
@@ -383,7 +482,8 @@ const SceneDisplay = ({
   setShowGallery,
   setShowProgress,
   setShowMap,
-  sceneId
+  sceneId,
+  skipTypewriter
 }: { 
   sceneTitle: string, 
   stageId: string | null, 
@@ -405,8 +505,10 @@ const SceneDisplay = ({
   setShowGallery: (v: boolean) => void,
   setShowProgress: (v: boolean) => void,
   setShowMap: (v: boolean) => void,
-  sceneId: string
+  sceneId: string,
+  skipTypewriter?: boolean
 }) => {
+  const textSegments = paraObj ? renderTextWithDialogue(paraObj.text, paraObj.isThought) : [];
   return (
     <div className="space-y-8 lg:space-y-6 relative">
       <div className="text-left relative z-10">
@@ -419,14 +521,6 @@ const SceneDisplay = ({
           transition={{ duration: 0.8 }}
         >
           <motion.h2 
-            animate={{ 
-              textShadow: [
-                "0 0 8px rgba(217,119,6,0.2)",
-                "0 0 16px rgba(217,119,6,0.4)",
-                "0 0 8px rgba(217,119,6,0.2)"
-              ]
-            }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             className="font-display text-3xl md:text-5xl lg:text-4xl text-amber-600 tracking-wider leading-tight mb-2 text-center"
           >
             {sceneTitle}
@@ -442,9 +536,18 @@ const SceneDisplay = ({
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              key={skipTypewriter ? 'static' : 'animated'}
               className="text-lg md:text-2xl lg:text-2xl leading-relaxed font-serif text-justify whitespace-pre-wrap max-w-xl lg:max-w-3xl mx-auto px-2 md:px-0"
             >
-              <TypewriterText segments={renderTextWithDialogue(paraObj.text, paraObj.isThought)} />
+              {skipTypewriter ? (
+                textSegments.map((seg, i) => (
+                  <span key={i} className={seg.className}>
+                    {seg.text}
+                  </span>
+                ))
+              ) : (
+                <TypewriterText segments={textSegments} />
+              )}
             </motion.p>
           )}
         </div>
@@ -721,6 +824,57 @@ const EndingDisplay = ({
   );
 };
 
+const ChroniclerTransition = ({ children, keyStr }: { children: ReactNode, keyStr: string }) => {
+  return (
+    <motion.div
+      key={keyStr}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={{
+        initial: { 
+          clipPath: 'inset(0 100% 0 0)',
+          opacity: 0,
+          scale: 0.96,
+          skewY: 2,
+          filter: 'blur(8px) brightness(1.2)'
+        },
+        animate: { 
+          clipPath: 'inset(0 0% 0 0)',
+          opacity: 1,
+          scale: 1,
+          skewY: 0,
+          filter: 'blur(0px) brightness(1)'
+        },
+        exit: { 
+          clipPath: 'inset(0 0 0 100%)',
+          opacity: 0,
+          scale: 1.04,
+          skewY: -2,
+          filter: 'blur(8px) brightness(0.8)'
+        }
+      }}
+      transition={{ 
+        duration: 0.9, 
+        ease: [0.4, 0, 0.2, 1] 
+      }}
+      className="relative w-full h-full flex flex-col justify-center"
+    >
+      {/* Dynamic Page/Ink Shadow Wipe */}
+      <motion.div
+        variants={{
+          initial: { left: '-10%', opacity: 0 },
+          animate: { left: '110%', opacity: [0, 0.6, 0] },
+          exit: { left: '-10%', opacity: 0 }
+        }}
+        transition={{ duration: 0.9, ease: [0.4, 0, 0.2, 1] }}
+        className="absolute top-0 w-32 h-full bg-gradient-to-r from-transparent via-amber-900/60 to-transparent blur-2xl z-20 pointer-events-none"
+      />
+      {children}
+    </motion.div>
+  );
+};
+
 export default function App() {
   const [currentSceneId, setCurrentSceneId] = useState<string>(gameData.initialScene);
   const [currentStageId, setCurrentStageId] = useState<string | null>(null);
@@ -777,7 +931,18 @@ export default function App() {
   const [showMap, setShowMap] = useState(false);
   const [mapScale, setMapScale] = useState(1);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+
+  // Parallax Motion Values
+  const mapX = useMotionValue(0);
+  const mapY = useMotionValue(0);
+  const bgX = useTransform(mapX, x => x * 0.4);
+  const bgY = useTransform(mapY, y => y * 0.4);
+  const labelX = useTransform(mapX, x => x * 0.1);
+  const labelY = useTransform(mapY, y => y * 0.1);
+  const cloudX = useTransform(mapX, x => x * 1.5);
+  const cloudY = useTransform(mapY, y => y * 1.5);
 
   const handleMapZoom = (e: WheelEvent) => {
     if (e.deltaY < 0) {
@@ -791,6 +956,18 @@ export default function App() {
     locations.find(l => l.id === selectedLocationId),
     [selectedLocationId]
   );
+
+  const filteredCharacters = useMemo(() => 
+    characters.filter(c => !c.path || c.path === 'all' || c.path === currentPath),
+    [currentPath]
+  );
+
+  const selectedCharacter = useMemo(() => {
+    const char = characters.find(c => c.id === selectedCharacterId);
+    if (!char && filteredCharacters.length > 0) return filteredCharacters[0];
+    return char || filteredCharacters[0];
+  }, [selectedCharacterId, filteredCharacters]);
+
   const [notification, setNotification] = useState<{title: string, visible: boolean, type?: 'ending' | 'character' | 'location' | 'insight'}>({ title: '', visible: false });
 
   // Endings are now session-only (cleared on refresh/close)
@@ -1211,87 +1388,85 @@ export default function App() {
     const parts = text.split(/([“”""][^“”""]*[“”""])/g);
     const segments: TextSegment[] = [];
     
-    // Track which characters have already been highlighted in this entire text block (paragraph)
-    const highlightedInThisText = new Set<string>();
-
     parts.forEach((part) => {
       if (!part) return;
 
       if (part.match(/^[“”""]/)) {
-        // Dialogue part - also check for character names here if needed
+        // Dialogue part
         segments.push({
           text: part,
-          className: "text-amber-500 font-dialogue text-xl md:text-3xl not-italic align-middle mx-1",
+          className: "text-amber-500 font-dialogue text-xl md:text-3xl not-italic align-middle mx-1 drop-shadow-[0_0_5px_rgba(251,191,36,0.3)]",
           isDialogue: true
         });
       } else {
-        // Split by character names to highlight them if they were just unlocked
+        // Highlighting Logic for keywords (Always highlight, not just on trigger, except for common scenes)
         let subSegments: TextSegment[] = [{ text: part, isDialogue: false }];
+        const isCommonScene = Object.keys(commonScenes).includes(currentSceneId);
 
-        characters.forEach(char => {
-          const newSubSegments: TextSegment[] = [];
-          subSegments.forEach(seg => {
-            if (seg.isDialogue || seg.className?.includes('text-amber-600') || seg.className?.includes('border-amber-900/30')) {
-              newSubSegments.push(seg);
-              return;
-            }
-
-            const nameParts = seg.text.split(new RegExp(`(${char.name})`, 'g'));
-            nameParts.forEach(namePart => {
-              if (namePart === char.name && newlyUnlockedCharacterIds.has(char.id) && !highlightedInThisText.has(char.id)) {
-                // Highlight ONLY if this is the first time we see the name in this paragraph/render
-                highlightedInThisText.add(char.id);
-                newSubSegments.push({
-                  text: namePart,
-                  className: "font-bold border-b-2 border-amber-600 px-0.5 text-amber-600",
-                  isDialogue: false
-                });
-              } else if (namePart) {
-                newSubSegments.push({ text: namePart, isDialogue: false });
+        if (!isCommonScene) {
+          // Character Keywords
+          characters.forEach(char => {
+            const newSubSegments: TextSegment[] = [];
+            subSegments.forEach(seg => {
+              if (seg.isDialogue || seg.className?.includes('text-amber-600') || seg.className?.includes('text-emerald-500')) {
+                newSubSegments.push(seg);
+                return;
               }
+              const nameParts = seg.text.split(new RegExp(`(${char.name})`, 'g'));
+              nameParts.forEach(namePart => {
+                if (namePart === char.name) {
+                  newSubSegments.push({
+                    text: namePart,
+                    className: "text-amber-600 font-bold",
+                    isDialogue: false
+                  });
+                } else if (namePart) {
+                  newSubSegments.push({ text: namePart, isDialogue: false });
+                }
+              });
             });
+            subSegments = newSubSegments;
           });
-          subSegments = newSubSegments;
-        });
 
-        // Split by location names to highlight them if they were just unlocked
-        const highlightedLocationsInThisText = new Set<string>();
-
-        locations.forEach(loc => {
-          const newSubSegments: TextSegment[] = [];
-          subSegments.forEach(seg => {
-            if (seg.isDialogue || seg.className?.includes('text-amber-600') || seg.className?.includes('text-emerald-500')) {
-              newSubSegments.push(seg);
-              return;
-            }
-
-            const nameParts = seg.text.split(new RegExp(`(${loc.name})`, 'g'));
-            nameParts.forEach(namePart => {
-              if (namePart === loc.name && newlyUnlockedLocationIds.has(loc.id) && !highlightedLocationsInThisText.has(loc.id)) {
-                // Highlight ONLY if this is the first time we see the location name in this paragraph
-                highlightedLocationsInThisText.add(loc.id);
-                newSubSegments.push({
-                  text: namePart,
-                  className: "font-bold border-b-2 border-emerald-600 px-0.5 text-emerald-600",
-                  isDialogue: false
-                });
-              } else if (namePart) {
-                newSubSegments.push({ text: namePart, isDialogue: false });
+          // Location Keywords
+          locations.forEach(loc => {
+            const newSubSegments: TextSegment[] = [];
+            subSegments.forEach(seg => {
+              if (seg.isDialogue || seg.className?.includes('text-amber-600') || seg.className?.includes('text-emerald-500')) {
+                newSubSegments.push(seg);
+                return;
               }
+
+              const locNames = [loc.name, ...(loc.matchNames || [])];
+              const pattern = new RegExp(`(${locNames.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'g');
+              
+              const nameParts = seg.text.split(pattern);
+              nameParts.forEach(namePart => {
+                const matchedLocName = locNames.find(n => namePart === n);
+                if (matchedLocName) {
+                  newSubSegments.push({
+                    text: namePart,
+                    className: "text-emerald-500 font-bold",
+                    isDialogue: false
+                  });
+                } else if (namePart) {
+                  newSubSegments.push({ text: namePart, isDialogue: false });
+                }
+              });
             });
+            subSegments = newSubSegments;
           });
-          subSegments = newSubSegments;
-        });
+        }
 
         subSegments.forEach(seg => {
-          if (seg.className?.includes('border-amber-600') || seg.className?.includes('border-emerald-600')) {
+          if (seg.className) {
             segments.push(seg);
           } else {
             segments.push({
               text: seg.text,
               className: isThought 
                 ? "text-rose-400/90 font-serif italic font-medium tracking-wide" 
-                : "text-neutral-400 font-serif italic",
+                : "text-neutral-400 font-serif",
               isDialogue: false
             });
           }
@@ -1302,6 +1477,22 @@ export default function App() {
     return segments;
   };
 
+  const currentParticleType = useMemo(() => {
+    if (currentScene.particleType) return currentScene.particleType;
+    if (Object.keys(commonScenes).includes(currentSceneId)) return 'none';
+    
+    const allParagraphsText = currentScene.paragraphs?.map(p => p.text).join(' ') || '';
+    const searchSpace = (currentSceneId + ' ' + currentScene.title + ' ' + currentScene.description + ' ' + allParagraphsText).toLowerCase();
+    
+    if (searchSpace.includes('北境') || searchSpace.includes('雪') || searchSpace.includes('高原')) return 'snow';
+    if (searchSpace.includes('王城') || searchSpace.includes('凯斯') || searchSpace.includes('贤者堡') || searchSpace.includes('大教堂')) return 'dust';
+    
+    const isNight = searchSpace.includes('night') || searchSpace.includes('夜') || searchSpace.includes('今夜') || searchSpace.includes('深夜');
+    if (isNight && (searchSpace.includes('溪木堡') || searchSpace.includes('森林') || searchSpace.includes('翠谷') || searchSpace.includes('绿野'))) return 'nature';
+    
+    return 'none';
+  }, [currentScene, currentSceneId]);
+
   if (!isLoaded) return null;
 
   const isLastPara = currentParaIndex === activeParagraphs.length - 1;
@@ -1310,9 +1501,19 @@ export default function App() {
   const showStartTrigger = isStartScene && isLastPara && !isStarting;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#d4d4d8] font-serif selection:bg-amber-900/40 overflow-x-hidden">
+    <div className="min-h-screen bg-[#0a0a0a] text-[#d4d4d8] font-serif selection:bg-amber-900/40 overflow-x-hidden no-scrollbar lg:cursor-none">
+      <CustomCursor />
+      
+      {/* Chronicler's Ink & Parchment Filters */}
+      <svg style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}>
+        <filter id="ink-distortion">
+          <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="5" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="15" />
+        </filter>
+      </svg>
       <div className="fixed inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-20 pointer-events-none" />
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0)_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none" />
+      <ParticleBackground type={currentParticleType} />
       
       <AnimatePresence mode="wait">
         {currentScene.isEnding ? (
@@ -1342,9 +1543,10 @@ export default function App() {
             </span>
           </div>
           
-          <div className="flex items-center gap-2 md:gap-4 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-2 md:gap-4 overflow-x-auto overflow-y-hidden no-scrollbar">
             <button 
               onClick={() => setShowVolumeMixer(!showVolumeMixer)}
+              title=""
               className="group flex items-center gap-1.5 md:gap-2 text-[8px] md:text-[10px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-neutral-600 hover:text-amber-600 transition-all cursor-pointer shrink-0"
             >
               <Music className="w-2.5 h-2.5 md:w-3 h-3 group-hover:drop-shadow-[0_0_3px_rgba(217,119,6,0.8)] transition-all" />
@@ -1353,6 +1555,7 @@ export default function App() {
             
             <button 
               onClick={() => setIsMuted(!isMuted)}
+              title=""
               className="group flex items-center gap-1.5 md:gap-2 text-[8px] md:text-[10px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-neutral-600 hover:text-amber-600 transition-all cursor-pointer shrink-0"
             >
               {isMuted ? (
@@ -1362,17 +1565,19 @@ export default function App() {
               )}
               <span className="hidden sm:inline">{isMuted ? 'Muted' : 'Music'}</span>
             </button>
-
+ 
             <button 
               onClick={() => setShowHistory(!showHistory)}
+              title=""
               className="group flex items-center gap-1.5 md:gap-2 text-[8px] md:text-[10px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-neutral-600 hover:text-amber-600 transition-all cursor-pointer shrink-0"
             >
               <History className="w-2.5 h-2.5 md:w-3 h-3 group-hover:drop-shadow-[0_0_3px_rgba(217,119,6,0.8)] transition-all" />
               <span className="hidden sm:inline">Log</span>
             </button>
-
+ 
             <button 
               onClick={returnToTitle}
+              title=""
               className="group flex items-center gap-1.5 md:gap-2 text-[8px] md:text-[10px] uppercase tracking-[0.15em] md:tracking-[0.2em] text-neutral-600 hover:text-amber-600 transition-all cursor-pointer shrink-0"
             >
               <RotateCcw className="w-2.5 h-2.5 md:w-3 h-3 group-hover:rotate-[-45deg] group-hover:drop-shadow-[0_0_3px_rgba(217,119,6,0.8)] transition-all" />
@@ -1384,13 +1589,7 @@ export default function App() {
         {/* Game Content */}
         <div className="flex-grow flex flex-col justify-center relative z-10">
           <AnimatePresence mode="wait">
-            <motion.div
-              key={currentSceneId + '-' + (currentStageId || 'base') + '-' + currentParaIndex}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.4 }}
-            >
+            <ChroniclerTransition keyStr={currentSceneId + '-' + (currentStageId || 'base') + '-' + currentParaIndex + '-' + isStarting}>
               <SceneDisplay 
                 sceneTitle={currentScene.title}
                 stageId={currentStageId}
@@ -1428,6 +1627,7 @@ export default function App() {
                 setShowProgress={setShowProgress}
                 setShowMap={setShowMap}
                 sceneId={currentSceneId}
+                skipTypewriter={Object.keys(commonScenes).includes(currentSceneId)}
               />
               
               {!showChoices && !showStartTrigger && activeParagraphs.length > 1 && currentParaIndex < activeParagraphs.length - 1 && (
@@ -1444,7 +1644,7 @@ export default function App() {
                   </button>
                 </div>
               )}
-            </motion.div>
+            </ChroniclerTransition>
           </AnimatePresence>
         </div>
 
@@ -1707,99 +1907,166 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] bg-[#0a0a0a]/95 p-8 overflow-y-auto"
+              className="fixed inset-0 z-[100] bg-[#0a0a0a]/98 backdrop-blur-xl flex items-center justify-center p-4 md:p-12 overflow-hidden"
             >
-              <div className="max-w-4xl lg:max-w-6xl mx-auto pt-16">
-                <div className="flex justify-between items-center mb-12 border-b border-amber-900/20 pb-6">
+              <div className="w-full max-w-7xl h-full max-h-[90vh] flex flex-col border border-amber-900/20 bg-[#0a0a0a] relative overflow-hidden">
+                {/* Background Textures */}
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-10 pointer-events-none" />
+                
+                {/* Header */}
+                <div className="relative z-10 flex justify-between items-center p-6 md:p-8 border-b border-amber-900/20 bg-[#0a0a0a]/50">
                   <div className="flex items-center gap-4">
-                    <Crown className="w-6 h-6 text-amber-600" />
-                    <h3 className="font-display text-2xl text-amber-600 tracking-widest uppercase">人物志 · Character Compendium</h3>
+                    <Crown className="w-5 h-5 md:w-6 md:h-6 text-amber-600 drop-shadow-[0_0_8px_rgba(217,119,6,0.3)]" />
+                    <h3 className="font-display text-lg md:text-2xl text-amber-600 tracking-[0.2em] uppercase">人物志 · Bestiary</h3>
                   </div>
                   <button 
                     onClick={() => setShowCompendium(false)}
-                    className="text-neutral-500 hover:text-neutral-100 transition-colors uppercase tracking-widest text-xs cursor-pointer"
+                    className="text-neutral-500 hover:text-amber-500 transition-all uppercase tracking-[0.2em] text-[10px] md:text-xs cursor-pointer group flex items-center gap-2"
                   >
+                    <X className="w-4 h-4 group-hover:rotate-90 transition-transform" />
                     Close
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-24">
-                  {unlockedCharacters.size === 0 ? (
-                    <div className="col-span-full py-24 text-center space-y-4">
-                      <p className="text-neutral-600 italic text-lg">目前尚无人物记录。</p>
-                      <p className="text-amber-900/30 text-xs uppercase tracking-[0.3em]">在旅途中邂逅他人以解锁人物志</p>
+                <div className="flex-grow flex flex-col md:flex-row overflow-hidden relative z-10">
+                  {/* Sidebar - Characters List */}
+                  <div className="w-full md:w-80 lg:w-96 border-r border-amber-900/10 flex flex-col bg-black/20">
+                    <div className="p-4 md:p-6 text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-neutral-600 font-display flex items-center justify-between">
+                      <span>Soul Records</span>
+                      <span className="text-amber-900/40">{unlockedCharacters.size} / {characters.length}</span>
                     </div>
-                  ) : characters
-                    .filter(c => !c.path || c.path === 'all' || c.path === currentPath)
-                    .map((char) => {
-                      const isUnlocked = unlockedCharacters.has(char.id);
-                      
-                      // Calculate current title and description based on history
-                      let currentTitle = char.title;
-                      let currentDescription = char.description;
-                      
-                      if (char.updates) {
-                        // Check history and current scene for updates
-                        const allVisitedScenes = [...history, currentSceneId];
-                        char.updates.forEach(update => {
-                          if (allVisitedScenes.includes(update.atScene)) {
-                            currentDescription = update.description;
-                            if (update.title) currentTitle = update.title;
-                          }
-                        });
-                      }
-
-                      const getIcon = (type: string) => {
-                      switch (type) {
-                        case 'fox': return <PawPrint className="w-16 h-16 text-amber-600" />;
-                        case 'sword': return <Sword className="w-16 h-16 text-amber-600" />;
-                        case 'eagle': return <Bird className="w-16 h-16 text-amber-600" />;
-                        case 'bear': return <PawPrint className="w-16 h-16 text-amber-600" />;
-                        case 'tiger': return <PawPrint className="w-16 h-16 text-amber-600" />;
-                        case 'ring': return <Crown className="w-16 h-16 text-amber-600" />;
-                        case 'scroll': return <Scroll className="w-16 h-16 text-amber-600" />;
-                        case 'shield': return <Shield className="w-16 h-16 text-amber-600" />;
-                        case 'heart': return <Heart className="w-16 h-16 text-amber-600" />;
-                        default: return <User className="w-16 h-16 text-amber-600" />;
-                      }
-                    };
-
-                    return (
-                      <motion.div
-                        key={char.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`relative p-8 border border-amber-900/20 bg-neutral-900/20 rounded-sm group overflow-hidden ${!isUnlocked && 'grayscale opacity-50'}`}
-                      >
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                          {getIcon(char.iconType)}
-                        </div>
+                    <div className="flex-grow overflow-y-auto no-scrollbar px-4 pb-8 space-y-2">
+                      {filteredCharacters.map((char) => {
+                        const isUnlocked = unlockedCharacters.has(char.id);
+                        const isSelected = selectedCharacter?.id === char.id;
                         
-                        <div className="relative z-10 space-y-4">
-                          <div className="space-y-1">
-                            <span className="text-[10px] text-amber-900/60 uppercase tracking-[0.3em] font-display">
-                              {isUnlocked ? currentTitle : 'Unknown Title'}
-                            </span>
-                            <h4 className="text-2xl text-amber-600 font-display tracking-wider">
-                              {isUnlocked ? char.name : '？？？'}
-                            </h4>
-                          </div>
-                          
-                          <p className="text-sm text-neutral-400 leading-relaxed font-serif italic">
-                            {isUnlocked ? currentDescription : '此人物的命运尚未与您交织。继续您的书写以解锁更多信息。'}
-                          </p>
+                        return (
+                          <button
+                            key={char.id}
+                            onClick={() => isUnlocked && setSelectedCharacterId(char.id)}
+                            className={`w-full text-left p-4 rounded-sm transition-all duration-500 relative group flex items-center gap-4 ${
+                              isSelected 
+                                ? 'bg-amber-900/10 border border-amber-900/30' 
+                                : 'hover:bg-amber-900/5 active:scale-[0.98]'
+                            } ${!isUnlocked && 'opacity-30 cursor-not-allowed grayscale'}`}
+                          >
+                            {/* Selected Flicker Aura */}
+                            {isSelected && (
+                              <motion.div 
+                                layoutId="candle-aura"
+                                className="absolute inset-0 bg-amber-600/5 blur-md"
+                                animate={{ 
+                                  opacity: [0.1, 0.3, 0.15, 0.4, 0.1],
+                                  scale: [1, 1.02, 0.98, 1.01, 1]
+                                }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                              />
+                            )}
 
-                          {!isUnlocked && (
-                            <div className="pt-4 flex items-center gap-2 text-[10px] text-amber-900/40 uppercase tracking-widest">
-                              <X className="w-3 h-3" />
-                              Locked in History
+                            {/* Avatar Frame - Embossed Initial */}
+                            <div className="relative shrink-0">
+                               <div className={`w-10 h-10 md:w-12 md:h-12 border flex items-center justify-center transition-colors duration-700 ${
+                                 isSelected ? 'border-amber-600/40' : 'border-amber-900/20 group-hover:border-amber-600/20'
+                               }`}>
+                                 {isUnlocked ? (
+                                   <EmbossedInitial nameEn={char.nameEn} className="text-xl md:text-2xl" />
+                                 ) : (
+                                   <X className="w-3 h-3 text-neutral-800" />
+                                 )}
+                               </div>
+                               {/* Active Indicator (Flame Tip) */}
+                               {isSelected && (
+                                 <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-amber-600 shadow-[0_0_8px_rgba(217,119,6,0.5)]" />
+                               )}
                             </div>
-                          )}
+
+                            <div className="flex-grow min-w-0">
+                              <div className={`text-[10px] md:text-xs truncate font-display tracking-wider transition-colors duration-500 ${isSelected ? 'text-amber-600' : 'text-neutral-500'}`}>
+                                {isUnlocked ? char.name : 'Unknown Identity'}
+                              </div>
+                              <div className="text-[7px] md:text-[8px] uppercase tracking-[0.2em] text-amber-900/30 truncate">
+                                {isUnlocked ? char.nameEn : 'Wait for encounter'}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Main Content - Selected Character Details */}
+                  <div className="flex-grow relative overflow-y-auto no-scrollbar">
+                    {selectedCharacter && unlockedCharacters.has(selectedCharacter.id) ? (
+                      <motion.div 
+                        key={selectedCharacter.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="p-8 md:p-16 flex flex-col items-center text-center space-y-8 md:space-y-12"
+                      >
+                        {/* Big Avatar Display */}
+                        <div className="relative group">
+                          {/* Candlelight Glow Behind Avatar */}
+                          <div className="absolute inset-0 bg-amber-600/10 blur-3xl animate-pulse rounded-full" />
+                          <div className="w-32 h-32 md:w-48 md:h-48 border-2 border-double border-amber-900/30 flex items-center justify-center relative bg-black/40 ring-1 ring-amber-600/5 group-hover:border-amber-600/40 transition-all duration-1000">
+                             <div className="scale-[2.5] transition-all duration-1000 transform group-hover:scale-[2.6]">
+                                <EmbossedInitial nameEn={selectedCharacter.nameEn} className="w-full h-full text-4xl md:text-6xl" />
+                             </div>
+                             {/* Decorative Corners for details avatar */}
+                             <div className="absolute top-0 left-0 w-4 h-4 border-t border-l border-amber-600/30" />
+                             <div className="absolute top-0 right-0 w-4 h-4 border-t border-r border-amber-600/30" />
+                             <div className="absolute bottom-0 left-0 w-4 h-4 border-b border-l border-amber-600/30" />
+                             <div className="absolute bottom-0 right-0 w-4 h-4 border-b border-r border-amber-600/30" />
+                          </div>
+                        </div>
+
+                        <div className="space-y-4 md:space-y-6 max-w-2xl px-4">
+                          <header className="space-y-2">
+                            <motion.span 
+                               initial={{ opacity: 0 }}
+                               animate={{ opacity: 1 }}
+                               transition={{ delay: 0.2 }}
+                               className="text-[10px] md:text-xs text-amber-900/60 uppercase tracking-[0.4em] font-display"
+                            >
+                              {selectedCharacter.nameEn}
+                            </motion.span>
+                            <motion.h4 
+                               initial={{ opacity: 0, y: 10 }}
+                               animate={{ opacity: 1, y: 0 }}
+                               transition={{ delay: 0.3 }}
+                               className="text-3xl md:text-5xl text-amber-600 font-display tracking-widest uppercase"
+                            >
+                              {selectedCharacter.name}
+                            </motion.h4>
+                          </header>
+
+                          <div className="w-24 md:w-32 h-px bg-gradient-to-r from-transparent via-amber-900/40 to-transparent mx-auto" />
+
+                          <motion.p 
+                             initial={{ opacity: 0 }}
+                             animate={{ opacity: 1 }}
+                             transition={{ delay: 0.5 }}
+                             className="text-base md:text-xl text-neutral-400 leading-relaxed font-serif italic text-left md:text-center"
+                          >
+                            <span className="text-amber-700/60 block mb-3 text-[10px] md:text-xs tracking-[0.3em] not-italic uppercase font-display border-b border-amber-900/10 pb-2">
+                              「 {(selectedCharacter.updates && selectedCharacter.updates.find(u => [...history, currentSceneId].includes(u.atScene))?.title) || selectedCharacter.title} 」
+                            </span>
+                            {(selectedCharacter.updates && selectedCharacter.updates.find(u => [...history, currentSceneId].includes(u.atScene))?.description) || selectedCharacter.description}
+                          </motion.p>
                         </div>
                       </motion.div>
-                    );
-                  })}
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-6 opacity-20">
+                         <div className="w-24 h-24 border border-dashed border-amber-900/40 rounded-full flex items-center justify-center">
+                            <User className="w-8 h-8 text-amber-900/40" />
+                         </div>
+                         <p className="text-amber-900/40 uppercase tracking-widest text-xs">此处人物的命运之书尚未开启</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Footer Decor */}
+                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-900/20 to-transparent pointer-events-none" />
               </div>
             </motion.div>
           )}
@@ -1843,29 +2110,26 @@ export default function App() {
                   className="flex-grow relative bg-[#f4d088] border-2 border-amber-900/40 rounded-sm overflow-hidden shadow-[inset_0_0_150px_rgba(139,69,19,0.3)] cursor-grab active:cursor-grabbing"
                   onWheel={handleMapZoom}
                 >
+                  {/* Parallax Background Layer (Slowest) */}
+                  <motion.div 
+                    style={{ x: bgX, y: bgY, scale: mapScale }}
+                    className="absolute inset-[-20%] pointer-events-none opacity-40 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/old-map.png')]" 
+                  />
+                  <motion.div 
+                    style={{ x: bgX, y: bgY, scale: mapScale }}
+                    className="absolute inset-[-20%] pointer-events-none opacity-20 mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')]" 
+                  />
+
                   <motion.div 
                     drag
                     dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }}
                     dragElastic={0.1}
-                    animate={{ scale: mapScale }}
+                    style={{ x: mapX, y: mapY, scale: mapScale }}
                     className="w-full h-full relative origin-center"
-                    style={{ minWidth: '100%', minHeight: '100%' }}
                   >
                     <div className="absolute inset-0 min-w-[1200px] min-h-[900px] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                      {unlockedLocations.size === 0 && (
-                        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40">
-                          <div className="text-center space-y-4 p-8 border border-amber-900/20 bg-[#0a0a0a]/80">
-                            <p className="text-neutral-500 italic">地图尚未开启。</p>
-                            <p className="text-amber-900/40 text-[10px] uppercase tracking-widest">随着您的探索，王国的疆域将逐渐显现</p>
-                          </div>
-                        </div>
-                      )}
+                      <MapFogOfWar unlockedLocations={unlockedLocations} locations={locations} />
                       
-                      {/* Parchment Texture Overlay */}
-                      <div className="absolute inset-0 opacity-50 pointer-events-none mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/old-map.png')]" />
-                      <div className="absolute inset-0 opacity-20 pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')]" />
-                      
-                      {/* Map Grid/Lines */}
                       <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none">
                         <defs>
                           <pattern id="grid" width="120" height="120" patternUnits="userSpaceOnUse">
@@ -1956,6 +2220,11 @@ export default function App() {
                         <rect x="30" y="30" width="1140" height="840" fill="none" stroke="#5d4037" strokeWidth="1" className="opacity-10" />
                       </svg>
 
+                      {/* Parallax Clouds Layer (Fastest) */}
+                      <motion.div style={{ x: cloudX, y: cloudY }} className="absolute inset-[-50%] pointer-events-none">
+                        <FloatingClouds count={8} />
+                      </motion.div>
+
                       {/* Locations & Region Labels */}
                       {locations
                         .filter(loc => !loc.path || loc.path === 'all' || loc.path === currentPath)
@@ -1973,7 +2242,9 @@ export default function App() {
                               animate={{ opacity: 1, scale: 1 }}
                               style={{ 
                                 left: `${loc.x}%`, 
-                                top: `${loc.y}%` 
+                                top: `${loc.y}%`,
+                                x: labelX,
+                                y: labelY
                               }}
                               className="absolute -translate-x-1/2 -translate-y-1/2 z-20"
                             >
