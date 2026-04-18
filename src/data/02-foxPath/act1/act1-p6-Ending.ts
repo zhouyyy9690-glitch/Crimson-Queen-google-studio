@@ -41,6 +41,7 @@ export const endingScenes: Record<string, Scene> = {
     id: 'ENDING_ForgottenPrincess',
     title: '被遗忘的公主',
     isEnding: true,
+    bgm: 'https://cdn.pixabay.com/download/audio/2025/11/12/audio_ca2d33d9b7.mp3?filename=forgotten-hero-records-medieval-times-435633.mp3',
     description: '逃离结局一：两人逃离',
     paragraphs: [
       { text: '在那个寂静的春天到来之际，十四岁的凯瑟琳策划了一场逃离。\n她请求芬因带她远远地离开，她再也不愿过一成不变的生活，也不愿迎接未知的危险与风暴。' },
@@ -96,6 +97,7 @@ export const endingScenes: Record<string, Scene> = {
     id: 'ENDING_MoonlightEscape',
     title: '月下远行',
     isEnding: true,
+    bgm: 'https://cdn.pixabay.com/download/audio/2025/11/12/audio_ca2d33d9b7.mp3?filename=forgotten-hero-records-medieval-times-435633.mp3',
     description: '逃离结局三：三人逃离',
     paragraphs: [
       { text: '奥德里克·格林的鲜血为这场被允诺的离开拉开序幕。第二天人们在马厩发现他的尸体，也发现了丢失的马。\n这之后，人们从死者的黑袍里找到一封信。' },
@@ -167,6 +169,7 @@ export const endingScenes: Record<string, Scene> = {
     id: 'ENDING_LegendoftheGreenValley',
     title: '翠谷传说',
     isEnding: true,
+    bgm: 'https://cdn.pixabay.com/download/audio/2025/11/12/audio_ca2d33d9b7.mp3?filename=forgotten-hero-records-medieval-times-435633.mp3',
     description: '逃离结局二：四人离开',
     paragraphs: [
       { text: '在这个以死亡落幕，以死亡开启的春天，他们沿着秘道悄无声息地离开了溪木堡。\n奥德里克·格林的鲜血为这场离开拉开序幕，第二天人们在马厩发现他的尸体，也发现了丢失的马。' },
@@ -185,6 +188,7 @@ export const endingScenes: Record<string, Scene> = {
     id: 'ENDING_SuddenDeath',
     title: '意外之死',
     isEnding: true,
+    bgm: 'https://cdn.pixabay.com/download/audio/2025/11/12/audio_ca2d33d9b7.mp3?filename=forgotten-hero-records-medieval-times-435633.mp3',
     description: '意外死亡',
     paragraphs: [
       { text: '因为意外，凯瑟琳失去了自己的性命，征服王国失去了自己的未来。' },

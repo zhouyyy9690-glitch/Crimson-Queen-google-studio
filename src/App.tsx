@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useMemo, useRef, WheelEvent, type ReactNode } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'motion/react';
+import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'motion/react';
 import { 
   Book, 
   ChevronRight, 
@@ -85,9 +85,9 @@ const MapFogOfWar = ({ unlockedLocations, locations }: { unlockedLocations: Set<
                 key={`hole-${loc.id}`}
                 cx={`${loc.x}%`}
                 cy={`${loc.y}%`}
-                r="120"
+                r="100" // Reduced radius slightly for perf
                 fill="black"
-                className="blur-3xl"
+                className="blur-2xl" // Reduced blur to lower GPU load
               />
             ))}
         </mask>
@@ -185,14 +185,14 @@ const TypewriterText = ({ segments, onComplete }: { segments: TextSegment[], onC
               return (
                 <motion.span
                   key={j}
-                  initial={{ opacity: 0, filter: "blur(12px)", y: 6 }} // More blur and shift
+                  initial={{ opacity: 0, filter: "blur(12px)", y: 6 }} 
                   animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
                   transition={{
-                    duration: 1.2, // Slower transition (from 0.8 to 1.2)
+                    duration: 1.2, 
                     delay: delay,
                     ease: [0.2, 0, 0.2, 1]
                   }}
-                  className={`inline-block whitespace-pre-wrap ${
+                  className={`inline whitespace-pre-wrap ${
                     isDialogue ? 'drop-shadow-[0_0_8px_rgba(251,191,36,0.2)]' : ''
                   } ${
                     (isChar || isLoc) ? (isChar ? 'animate-[glow-pulse_3s_infinite]' : 'animate-[glow-pulse_4s_infinite]') : ''
@@ -883,6 +883,7 @@ export default function App() {
   const [seenLocationNames, setSeenLocationNames] = useState<Set<string>>(new Set());
   const [unlockedInsights, setUnlockedInsights] = useState<Set<string>>(new Set());
   const [visitedTexts, setVisitedTexts] = useState<string[]>([]);
+  const [showMap, setShowMap] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [bgmVolume, setBgmVolume] = useState(0.4);
   const [sfxVolume, setSfxVolume] = useState(0.3);
@@ -916,27 +917,55 @@ export default function App() {
   const [unlockedEndings, setUnlockedEndings] = useState<{id: string, title: string, text: string}[]>([]);
   const [showGallery, setShowGallery] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
-  const [showMap, setShowMap] = useState(false);
-  const [mapScale, setMapScale] = useState(1);
+  // Optimized Performance Values
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapScale = useMotionValue(1);
+  const mapScaleSpring = useSpring(mapScale, { stiffness: 100, damping: 20, bounce: 0 });
+  const mapTilt = useTransform(mapScaleSpring, [1, 3.5], [0, 45]);
+  const mapPerspectiveOffset = useTransform(mapScaleSpring, [1, 3.5], [1000, 1500]);
+  const mapObjectHeight = useTransform(mapScaleSpring, [1, 2.5], [0, 80]); 
+  
+  // NEW: Symbolic Emergence Factors
+  const mapObjectOpacity = useTransform(mapScaleSpring, [1.4, 2.2], [0, 1]);
+  const mapObjectScale = useTransform(mapScaleSpring, [1.4, 2.5], [0.3, 1]);
+  
+  // Safe Drag Constraints based on zoom
+  const dragLimit = useTransform(mapScaleSpring, s => Math.max(800, 800 * s));
+  
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+
+  // Separation Logic handled by CSS Variables to avoid React re-renders
+  useEffect(() => {
+    return mapScaleSpring.on("change", (latest) => {
+      if (mapRef.current) {
+        // High-performance separation factor update
+        const spreadCurve = Math.pow(Math.max(0, latest - 0.5), 1.5) * 2.5;
+        mapRef.current.style.setProperty('--map-scale-val', `${latest}`);
+        mapRef.current.style.setProperty('--map-sep-factor', `${spreadCurve}`);
+      }
+    });
+  }, [mapScaleSpring]);
 
   // Parallax Motion Values
   const mapX = useMotionValue(0);
   const mapY = useMotionValue(0);
   const bgX = useTransform(mapX, x => x * 0.4);
   const bgY = useTransform(mapY, y => y * 0.4);
-  const labelX = useTransform(mapX, x => x * 0.1);
-  const labelY = useTransform(mapY, y => y * 0.1);
-  const cloudX = useTransform(mapX, x => x * 1.5);
-  const cloudY = useTransform(mapY, y => y * 1.5);
+  
+  // PERFORMANCE FIX: Decouple expensive 3D transforms from generic motion values
+  const labelX = useTransform(mapX, x => x * 0.05);
+  const labelY = useTransform(mapY, y => y * 0.05);
+  const cloudX = useTransform(mapX, x => x * 0.1);
+  const cloudY = useTransform(mapY, y => y * 0.1);
 
   const handleMapZoom = (e: WheelEvent) => {
+    const currentScale = mapScale.get();
     if (e.deltaY < 0) {
-      setMapScale(prev => Math.min(prev + 0.2, 4));
+      mapScale.set(Math.min(currentScale + 0.3, 4));
     } else {
-      setMapScale(prev => Math.max(prev - 0.2, 0.5));
+      mapScale.set(Math.max(currentScale - 0.3, 0.5));
     }
   };
 
@@ -946,8 +975,11 @@ export default function App() {
   );
 
   const filteredCharacters = useMemo(() => 
-    characters.filter(c => !c.path || c.path === 'all' || c.path === currentPath),
-    [currentPath]
+    characters.filter(c => 
+      unlockedCharacters.has(c.id) || 
+      (!c.path || c.path === 'all' || c.path === 'common' || c.path === currentPath)
+    ),
+    [currentPath, unlockedCharacters]
   );
 
   const selectedCharacter = useMemo(() => {
@@ -1206,10 +1238,14 @@ export default function App() {
 
     const currentText = currentPara.text;
 
-    // 3. Character unlocks
+    // Character unlocks via tags [C:Name]
     characters.forEach(char => {
-      const isMatch = currentText.includes(char.name);
-      if (!unlockedCharacters.has(char.id) && isMatch) {
+      const searchNames = [char.name, ...(char.matchNames || [])];
+      const isTagged = searchNames.some(name => 
+        currentText.includes(`[C:${name}]`) || currentText.includes(`[C：${name}]`)
+      );
+      
+      if (!unlockedCharacters.has(char.id) && isTagged) {
         setUnlockedCharacters(prev => {
           const next = new Set(prev);
           next.add(char.id);
@@ -1219,10 +1255,14 @@ export default function App() {
       }
     });
 
-    // 4. Location unlocks
+    // Location unlocks via tags [L:Name]
     locations.forEach(loc => {
-      const isMatch = currentText.includes(loc.name);
-      if (!unlockedLocations.has(loc.id) && isMatch) {
+      const searchNames = [loc.name, ...(loc.matchNames || [])];
+      const isTagged = searchNames.some(name => 
+        currentText.includes(`[L:${name}]`) || currentText.includes(`[L：${name}]`)
+      );
+      
+      if (!unlockedLocations.has(loc.id) && isTagged) {
         setUnlockedLocations(prev => {
           const next = new Set(prev);
           next.add(loc.id);
@@ -1252,14 +1292,16 @@ export default function App() {
     // Play SFX if provided in choice data
     if (choice.sfx) {
       playSFX(choice.sfx, isMuted, sfxVolume);
+    } else if (currentSceneId === 'start') {
+      // 核心修正：点击四条道路选项立即播放开门声，确保点击即响
+      playSFX(SFX_ASSETS.DOOR_OPEN, isMuted, sfxVolume);
+    } else {
+      // 默认点击音效
+      playSFX(SFX_ASSETS.CLICK, isMuted, sfxVolume);
     }
 
     if (choice.explanation) {
-      // 如果是初始场景的选择（狐狸/红鹿/黑鹰），播放开门声
-      if (currentSceneId === 'start') {
-        playSFX(SFX_ASSETS.DOOR_OPEN, isMuted, sfxVolume);
-      }
-      setTimeout(() => setShowExplanation(true), 800);
+      setTimeout(() => setShowExplanation(true), 150); // Faster feedback
     } else {
       setTimeout(() => proceedWithChoice(choice), 800);
     }
@@ -1351,39 +1393,40 @@ export default function App() {
     parts.forEach((part) => {
       if (!part) return;
 
-      if (part.match(/^[“”""]/)) {
-        // Dialogue part
-        segments.push({
-          text: part,
-          className: "text-amber-500 font-dialogue text-xl md:text-3xl not-italic align-middle mx-1 drop-shadow-[0_0_5px_rgba(251,191,36,0.3)]",
-          isDialogue: true
-        });
-      } else {
-        // 2. Process Manual Highlighting Tags in narrative text
-        // Pattern: [C:Name] for Characters, [L:Location] for Locations
-        const tagParts = part.split(/(\[C:[^\]]+\]|\[L:[^\]]+\])/g);
-        
-        tagParts.forEach(tagPart => {
-          if (!tagPart) return;
+      const isDialoguePart = part.match(/^[“”""]/);
+      
+      // 2. Process Manual Highlighting Tags within both narrative and dialogue
+      // Pattern: [C:Name] or [C：Name] for Characters, [L:Location] or [L：Location] for Locations
+      const tagParts = part.split(/(\[C[:：][^\]]+\]|\[L[:：][^\]]+\])/g);
+      
+      tagParts.forEach(tagPart => {
+        if (!tagPart) return;
 
-          if (tagPart.startsWith('[C:') && tagPart.endsWith(']')) {
-            // Character Manual Highlight
-            const name = tagPart.substring(3, tagPart.length - 1);
+        if (tagPart.startsWith('[C') && tagPart.endsWith(']')) {
+          // Character Manual Highlight
+          const name = tagPart.substring(3, tagPart.length - 1);
+          segments.push({
+            text: name,
+            className: "text-amber-600 font-bold",
+            isDialogue: !!isDialoguePart
+          });
+        } else if (tagPart.startsWith('[L') && tagPart.endsWith(']')) {
+          // Location Manual Highlight
+          const locName = tagPart.substring(3, tagPart.length - 1);
+          segments.push({
+            text: locName,
+            className: "text-emerald-500 font-bold",
+            isDialogue: !!isDialoguePart
+          });
+        } else {
+          // Normal segment (either dialogue or narrative)
+          if (isDialoguePart) {
             segments.push({
-              text: name,
-              className: "text-amber-600 font-bold",
-              isDialogue: false
-            });
-          } else if (tagPart.startsWith('[L:') && tagPart.endsWith(']')) {
-            // Location Manual Highlight
-            const locName = tagPart.substring(3, tagPart.length - 1);
-            segments.push({
-              text: locName,
-              className: "text-emerald-500 font-bold",
-              isDialogue: false
+              text: tagPart,
+              className: "text-amber-100/90 font-dialogue drop-shadow-[0_0_5px_rgba(251,191,36,0.2)]",
+              isDialogue: true
             });
           } else {
-            // Normal Text
             segments.push({
               text: tagPart,
               className: isThought 
@@ -1392,8 +1435,8 @@ export default function App() {
               isDialogue: false
             });
           }
-        });
-      }
+        }
+      });
     });
 
     return segments;
@@ -1509,7 +1552,7 @@ export default function App() {
         </header>
 
         {/* Game Content */}
-        <div className="flex-grow flex flex-col justify-center relative z-10">
+        <div className="flex-grow flex flex-col justify-center relative z-20 pointer-events-auto">
           <AnimatePresence mode="wait">
             <ChroniclerTransition keyStr={currentSceneId + '-' + (currentStageId || 'base') + '-' + currentParaIndex + '-' + isStarting}>
               <SceneDisplay 
@@ -1789,7 +1832,7 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] bg-[#0a0a0a] p-4 md:p-8 overflow-y-auto"
+              className="fixed inset-0 z-[150] bg-[#0a0a0a] p-4 md:p-8 overflow-y-auto"
             >
               <div className="max-w-2xl lg:max-w-4xl mx-auto pt-12 md:pt-16">
                 <div className="flex justify-between items-center mb-8 md:mb-12 border-b border-amber-900/20 pb-6">
@@ -1829,7 +1872,7 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] bg-[#0a0a0a]/98 backdrop-blur-xl flex items-center justify-center p-4 md:p-12 overflow-hidden"
+              className="fixed inset-0 z-[150] bg-[#0a0a0a]/98 backdrop-blur-xl flex items-center justify-center p-4 md:p-12 overflow-hidden"
             >
               <div className="w-full max-w-7xl h-full max-h-[90vh] flex flex-col border border-amber-900/20 bg-[#0a0a0a] relative overflow-hidden">
                 {/* Background Textures */}
@@ -2001,7 +2044,7 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] bg-[#0a0a0a] p-4 md:p-8 overflow-hidden flex flex-col"
+              className="fixed inset-0 z-[150] bg-[#0a0a0a] p-4 md:p-8 overflow-hidden flex flex-col"
             >
               <div className="max-w-6xl mx-auto w-full flex-grow flex flex-col pt-12 md:pt-16">
                 <div className="flex justify-between items-center mb-6 md:mb-8 border-b border-amber-900/20 pb-4 md:pb-6">
@@ -2018,7 +2061,7 @@ export default function App() {
                     <button 
                       onClick={() => {
                         setShowMap(false);
-                        setMapScale(1);
+                        mapScale.set(1);
                         setSelectedLocationId(null);
                       }}
                       className="text-neutral-500 hover:text-neutral-100 transition-colors uppercase tracking-widest text-[10px] md:text-xs cursor-pointer p-2"
@@ -2029,37 +2072,119 @@ export default function App() {
                 </div>
 
                 <div 
-                  className="flex-grow relative bg-[#f4d088] border-2 border-amber-900/40 rounded-sm overflow-hidden shadow-[inset_0_0_150px_rgba(139,69,19,0.3)] cursor-grab active:cursor-grabbing"
+                  ref={mapRef}
+                  className="flex-grow relative bg-[#d4a85a] border-2 border-amber-900/60 rounded-sm overflow-hidden shadow-[inset_0_0_80px_rgba(0,0,0,0.2)] cursor-grab active:cursor-grabbing"
                   onWheel={handleMapZoom}
+                  style={{ 
+                    perspective: '2000px',
+                    WebkitFontSmoothing: 'antialiased'
+                  }}
                 >
-                  {/* Parallax Background Layer (Slowest) */}
-                  <motion.div 
-                    style={{ x: bgX, y: bgY, scale: mapScale }}
-                    className="absolute inset-[-20%] pointer-events-none opacity-40 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/old-map.png')]" 
-                  />
-                  <motion.div 
-                    style={{ x: bgX, y: bgY, scale: mapScale }}
-                    className="absolute inset-[-20%] pointer-events-none opacity-20 mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')]" 
-                  />
-
+                  {/* OPTIMIZED 3D INTERACTIVE SHEET: Reduced size and removed shadow-2xl for performance */}
                   <motion.div 
                     drag
-                    dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }}
-                    dragElastic={0.1}
-                    style={{ x: mapX, y: mapY, scale: mapScale }}
-                    className="w-full h-full relative origin-center"
+                    dragConstraints={{ 
+                      left: -1500, 
+                      right: 1500, 
+                      top: -1200, 
+                      bottom: 1200 
+                    }}
+                    dragTransition={{ bounceStiffness: 200, bounceDamping: 30, power: 0.15 }}
+                    dragElastic={0.02}
+                    style={{ 
+                      x: mapX, 
+                      y: mapY, 
+                      scale: mapScaleSpring,
+                      rotateX: mapTilt,
+                      perspective: mapPerspectiveOffset,
+                      transformStyle: 'preserve-3d',
+                      transform: 'translateZ(0)' // Force GPU acceleration
+                    }}
+                    className="absolute inset-[-150%] origin-center will-change-transform bg-[#e3bc6a]"
                   >
-                    <div className="absolute inset-0 min-w-[1200px] min-h-[900px] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                    {/* Fixed Background Texture */}
+                    <div className="absolute inset-0 pointer-events-none opacity-60 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/old-map.png')]" />
+                    <div className="absolute inset-0 pointer-events-none opacity-30 mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')]" />
+
+                    {/* Map Contents - Centered coordinate space */}
+                    <div className="absolute inset-0 min-w-[2000px] min-h-[1600px] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ transformStyle: 'preserve-3d' }}>
                       <MapFogOfWar unlockedLocations={unlockedLocations} locations={locations} />
-                      
-                      <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none">
+                      <svg className="absolute inset-0 w-full h-full opacity-30 pointer-events-none" style={{ transformStyle: 'preserve-3d' }}>
+                        {/* Landmass Ground Shadow for 3D Modeling Effect */}
+                        <path 
+                          d="M 500 400 c 100 -100 300 -40 400 -100 s 200 -160 400 -100 s 300 100 400 200 s 100 300 0 500 s -200 400 -400 500 s -400 100 -600 200 s -300 -100 -400 -300 s -100 -400 0 -600 s 100 -200 200 -300" 
+                          fill="rgba(0,0,0,0.15)" 
+                          className="blur-xl"
+                          transform="translate(25, 25)"
+                        />
+                        {/* Custom Medieval Region Boundaries (Hand-drawn style) */}
+                        <g className="pointer-events-none opacity-40">
+                          {/* South Boundary - Wide & Organic */}
+                          <path 
+                            d="M 300 650 q 50 -20 200 -20 t 350 40 t 250 150 v 200 q -100 50 -300 80 t -400 -50 Z" 
+                            fill="none" 
+                            stroke="#8b4513" 
+                            strokeWidth="1.2" 
+                            strokeDasharray="10 5"
+                            className="text-amber-900/10"
+                          />
+                          
+                          {/* Verdant Vale Boundary - Irregular valley shape around its points */}
+                          {unlockedLocations.has('verdant_vale') && (
+                            <motion.path 
+                              initial={{ pathLength: 0, opacity: 0 }}
+                              animate={{ pathLength: 1, opacity: 1 }}
+                              transition={{ duration: 2, ease: "easeInOut" }}
+                              d="M 460 540 c -40 20 -60 60 -40 120 s 40 80 80 60 s 60 -40 40 -120 s -40 -80 -80 -60 Z" 
+                              fill="url(#emerald-glow)" 
+                              fillOpacity="0.03"
+                              stroke="#065f46" 
+                              strokeWidth="1.5" 
+                              strokeDasharray="5 3"
+                              className="text-emerald-900/30"
+                            />
+                          )}
+
+                          {/* North, West, East, Central - Simplified medieval border lines */}
+                          <path d="M 350 100 q 150 -30 350 0 t 300 50" fill="none" stroke="#8b4513" strokeWidth="1" strokeDasharray="15 10" className="opacity-10"/>
+                          <path d="M 150 350 q 50 150 0 300" fill="none" stroke="#8b4513" strokeWidth="1" strokeDasharray="15 10" className="opacity-10"/>
+                          <path d="M 950 300 q 80 150 0 350" fill="none" stroke="#8b4513" strokeWidth="1" strokeDasharray="15 10" className="opacity-10"/>
+                        </g>
+
                         <defs>
+                          <radialGradient id="emerald-glow">
+                            <stop offset="0%" stopColor="#10b981" />
+                            <stop offset="100%" stopColor="transparent" />
+                          </radialGradient>
                           <pattern id="grid" width="120" height="120" patternUnits="userSpaceOnUse">
                             <path d="M 120 0 L 0 0 0 120" fill="none" stroke="#8b4513" strokeWidth="0.5" strokeDasharray="4 4"/>
                           </pattern>
                         </defs>
                         <rect width="100%" height="100%" fill="url(#grid)" />
                         
+                        {/* Hierarchy Connecting Lines */}
+                        <g className="text-[#8b4513]/40" stroke="currentColor" fill="none" strokeWidth="0.8" strokeDasharray="3 3" style={{ transformStyle: 'preserve-3d' }}>
+                          {locations.map(loc => {
+                            if (loc.parentId) {
+                              const parent = locations.find(p => p.id === loc.parentId);
+                              if (parent && unlockedLocations.has(loc.id)) {
+                                return (
+                                  <line 
+                                    key={`link-${loc.id}`}
+                                    x1={`${parent.x}%`} 
+                                    y1={`${parent.y}%`}
+                                    x2={`${loc.x}%`} 
+                                    y2={`${loc.y}%`}
+                                    className="opacity-40"
+                                    style={{ transform: 'translateZ(20px)' }}
+                                  />
+                                );
+                              }
+                            }
+                            return null;
+                          })}
+                        </g>
+
                         {/* Hand-Drawn Landmass Outline (Conquest Kingdom) */}
                         <path 
                           d="M 300 200 c 50 -50 150 -20 200 -50 s 100 -80 200 -50 s 150 50 200 100 s 50 150 0 250 s -100 200 -200 250 s -200 50 -300 100 s -150 -50 -200 -150 s -50 -200 0 -300 s 50 -100 100 -150" 
@@ -2105,13 +2230,21 @@ export default function App() {
                           {[
                             {x: 410, y: 760}, {x: 435, y: 775}, {x: 460, y: 755},
                             {x: 540, y: 830}, {x: 565, y: 845}, {x: 590, y: 825},
-                            {x: 780, y: 550}, {x: 805, y: 565}
+                            {x: 780, y: 550}, {x: 805, y: 565},
+                            // Emerald Valley Woods
+                            {x: 530, y: 580}, {x: 550, y: 600}, {x: 570, y: 570},
+                            {x: 520, y: 610}, {x: 580, y: 620}
                           ].map((p, i) => (
                             <g key={`tree-${i}`} transform={`translate(${p.x}, ${p.y})`}>
                               <line x1="0" y1="0" x2="0" y2="12" stroke="currentColor" strokeWidth="1.5" />
                               <circle cx="0" cy="0" r="5" fill="currentColor" stroke="none" />
                             </g>
                           ))}
+                        </g>
+
+                        {/* Medieval Terrain - Additional Rivers/Water in Emerald Valley */}
+                        <g className="text-[#4e342e]/30" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="5 2">
+                          <path d="M 500 550 q 20 40 50 20 t 40 60" className="opacity-40" />
                         </g>
 
                         {/* Medieval Terrain - Waves */}
@@ -2153,40 +2286,135 @@ export default function App() {
                         .map((loc) => {
                           const isUnlocked = unlockedLocations.has(loc.id);
                           
-                          // Logic: Region labels are always shown (grayed out if not unlocked)
-                          // Specific locations only shown if unlocked
                           if (!loc.isRegionLabel && !isUnlocked) return null;
+
+                          // 3D Separation Logic via CSS Variables
+                          const parent = loc.parentId ? locations.find(p => p.id === loc.parentId) : null;
+                          const vectorX = parent ? (loc.x - parent.x) : (loc.x - 50);
+                          const vectorY = parent ? (loc.y - parent.y) : (loc.y - 50);
+                          const zDepth = loc.isRegionLabel ? (loc.isSubRegion ? 120 : 180) : 60;
 
                           return (
                             <motion.div
                               key={loc.id}
-                              initial={{ opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
                               style={{ 
                                 left: `${loc.x}%`, 
                                 top: `${loc.y}%`,
                                 x: labelX,
-                                y: labelY
-                              }}
-                              className="absolute -translate-x-1/2 -translate-y-1/2 z-20"
+                                y: labelY,
+                                z: zDepth,
+                                translateX: `calc(var(--map-sep-factor, 0) * ${vectorX * 2.5}px)`,
+                                translateY: `calc(var(--map-sep-factor, 0) * ${vectorY * 2.5}px)`,
+                                scale: `calc(1 / pow(var(--map-scale-val, 1), 0.4))`,
+                                transformStyle: 'preserve-3d'
+                              } as any}
+                              className="absolute -translate-x-1/2 -translate-y-1/2 z-20 will-change-transform"
                             >
                               <button 
                                 onClick={() => isUnlocked && setSelectedLocationId(loc.id)}
                                 className={`relative flex flex-col items-center group transition-all ${isUnlocked ? 'hover:scale-110 cursor-pointer' : 'cursor-default'}`}
                               >
                                 {loc.isRegionLabel ? (
-                                  <div className={`px-4 py-2 border-y transition-colors duration-500 ${isUnlocked ? 'border-[#5d4037]/40 bg-[#8b4513]/5' : 'border-neutral-800 bg-black/10 grayscale opacity-40'}`}>
-                                    <h2 className={`text-lg md:text-xl font-display tracking-[0.4em] uppercase whitespace-nowrap ${isUnlocked ? 'text-[#5d4037]' : 'text-neutral-600'}`}>
+                                  <div className={`transition-all duration-700 ${
+                                    loc.isSubRegion 
+                                      ? 'px-6 py-2' 
+                                      : 'px-8 py-4'
+                                  } ${isUnlocked ? 'opacity-100' : 'opacity-20 grayscale'}`}>
+                                    {/* Text-only label embedded in map */}
+                                    <h2 className={`${
+                                      loc.isSubRegion 
+                                        ? 'text-[12px] md:text-sm text-emerald-900/60' 
+                                        : 'text-xl md:text-2xl text-amber-950/20'
+                                    } font-display tracking-[0.6em] md:tracking-[0.8em] uppercase whitespace-nowrap drop-shadow-sm select-none`}>
                                       {loc.name}
                                     </h2>
+                                    {loc.isSubRegion && isUnlocked && (
+                                      <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: '100%' }}
+                                        className="h-px bg-gradient-to-r from-transparent via-emerald-800/30 to-transparent mt-1" 
+                                      />
+                                    )}
                                   </div>
                                 ) : (
-                                  <div className="flex flex-col items-center">
-                                    <div className={`w-1.5 h-1.5 rounded-full mb-1 ${isUnlocked ? 'bg-[#5d4037]' : 'bg-neutral-600'}`} />
-                                    <p className={`text-[10px] md:text-xs font-display tracking-widest uppercase whitespace-nowrap drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)] ${isUnlocked ? 'text-[#5d4037]' : 'text-neutral-600'}`}>
+                                  <div className="flex flex-col items-center" style={{ transformStyle: 'preserve-3d' }}>
+                                    {/* ABSTRACT ART RELIEF: Emerges only on deep zoom */}
+                                    {isUnlocked && (
+                                      <motion.div 
+                                        style={{ 
+                                          z: mapObjectHeight,
+                                          rotateX: -mapTilt, 
+                                          opacity: mapObjectOpacity,
+                                          scale: mapObjectScale,
+                                          transformStyle: 'preserve-3d'
+                                        }}
+                                        className="absolute bottom-[10%] flex items-end justify-center pointer-events-none will-change-transform"
+                                      >
+                                        {(loc.id.includes('castle') || loc.name.includes('堡') || loc.name.includes('都') || loc.name.includes('塞')) ? (
+                                          <div className="relative flex items-end gap-1" style={{ transformStyle: 'preserve-3d' }}>
+                                            {/* SYMBOLIC ARCHITECTURE: Needles of Power */}
+                                            <div className="w-[1.5px] h-20 bg-gradient-to-t from-amber-950 to-transparent" />
+                                            <div className="w-[2.5px] h-32 bg-gradient-to-t from-amber-950 via-amber-800 to-transparent relative">
+                                               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-amber-400 rounded-full blur-[2px] opacity-70" />
+                                            </div>
+                                            <div className="w-[1.5px] h-24 bg-gradient-to-t from-amber-950 to-transparent" />
+                                          </div>
+                                        ) : (loc.id.includes('valley') || loc.id.includes('forest') || loc.name.includes('谷') || loc.name.includes('林')) ? (
+                                          <div className="flex items-end justify-center" style={{ transformStyle: 'preserve-3d' }}>
+                                            {/* SYMBOLIC TERRAIN: Crystalline Shards */}
+                                            {[1, 2, 3, 4].map(i => (
+                                              <div 
+                                                key={i} 
+                                                className="w-8 h-12 bg-emerald-950/20 border-l border-emerald-900/40" 
+                                                style={{ 
+                                                  clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)',
+                                                  transform: `scale(${0.4 + (i * 0.2)}) translateZ(${i * 8 - 16}px) translateX(${i * -6 + 9}px) rotateY(${i * 15}deg)`,
+                                                  filter: 'contrast(1.2) brightness(0.8)',
+                                                  mixBlendMode: 'multiply'
+                                                }} 
+                                              />
+                                            ))}
+                                          </div>
+                                        ) : (loc.id.includes('port') || loc.name.includes('港') || loc.name.includes('码')) ? (
+                                          <div className="flex flex-col items-center" style={{ transformStyle: 'preserve-3d' }}>
+                                             {/* SYMBOLIC MARITIME: Minimalist Masts */}
+                                             <div className="w-[1px] h-16 bg-amber-950/40 relative">
+                                                <div className="absolute top-4 left-1/2 -translate-x-1/2 w-8 h-[1px] bg-amber-950/30" />
+                                                <div className="absolute top-8 left-1/2 -translate-x-1/2 w-6 h-[1px] bg-amber-950/30" />
+                                             </div>
+                                          </div>
+                                        ) : (
+                                          /* SYMBOLIC POI: Floating Sigil */
+                                          <div className="w-[1px] h-12 bg-amber-900/20 relative">
+                                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 border border-amber-900/40 rotate-45" />
+                                          </div>
+                                        )}
+                                      </motion.div>
+                                    )}
+
+                                    {/* Map Marker Dot - Stays flat on parchment */}
+                                    <div className="relative">
+                                      <motion.div 
+                                        animate={{ 
+                                          scale: [1, 1.4, 1],
+                                          opacity: [0.3, 0.7, 0.3]
+                                        }}
+                                        transition={{ 
+                                          duration: 3, 
+                                          repeat: Infinity,
+                                          ease: "easeInOut" 
+                                        }}
+                                        className={`w-3 h-3 rounded-full mb-1 blur-[1.5px] ${
+                                          isUnlocked ? 'bg-amber-500 shadow-[0_0_12px_rgba(251,191,36,0.9)]' : 'bg-neutral-600'
+                                        }`} 
+                                      />
+                                      <div className={`w-1.5 h-1.5 rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${
+                                        isUnlocked ? 'bg-white' : 'bg-neutral-400'
+                                      }`} />
+                                    </div>
+                                    <p className={`mt-1 text-[10px] md:text-sm font-display tracking-[0.2em] uppercase whitespace-nowrap drop-shadow-[0_1px_1px_rgba(255,255,255,0.4)] ${isUnlocked ? 'text-[#3e2723] font-bold' : 'text-neutral-600'}`}>
                                       {loc.name}
                                     </p>
-                                    <div className={`w-0 h-px transition-all duration-300 ${isUnlocked ? 'bg-[#5d4037]/40 group-hover:w-full' : ''}`} />
                                   </div>
                                 )}
                               </button>
@@ -2226,22 +2454,25 @@ export default function App() {
                   </p>
                 </div>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-              {/* Location Detail Overlay */}
-              <AnimatePresence>
-                {selectedLocation && (
-                  <motion.div
-                    initial={{ opacity: 0, x: 100 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 100 }}
-                    className="fixed top-0 right-0 bottom-0 w-full md:w-96 bg-[#0a0a0a] border-l border-amber-900/20 z-[110] shadow-2xl p-8 flex flex-col"
-                  >
-                    <button 
-                      onClick={() => setSelectedLocationId(null)}
-                      className="absolute top-8 right-8 text-neutral-500 hover:text-neutral-100 transition-colors p-2"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
+        {/* Location Detail Overlay */}
+        <AnimatePresence>
+          {selectedLocation && (
+            <motion.div
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 100 }}
+              className="fixed top-0 right-0 bottom-0 w-full md:w-96 bg-[#0a0a0a] border-l border-amber-900/20 z-[200] shadow-2xl p-8 flex flex-col overflow-y-auto no-scrollbar"
+            >
+              <button 
+                onClick={() => setSelectedLocationId(null)}
+                className="absolute top-8 right-8 text-neutral-500 hover:text-neutral-100 transition-colors p-2"
+              >
+                <X className="w-5 h-5" />
+              </button>
 
                     <div className="mt-16 space-y-8">
                       <div className="space-y-2">
@@ -2329,45 +2560,54 @@ export default function App() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Footer Info */}
-        <footer className="mt-16 md:mt-24 pt-6 md:pt-8 border-t border-amber-900/10 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6 text-[8px] md:text-[10px] uppercase tracking-[0.2em] md:tracking-[0.3em] text-neutral-600 relative z-10">
-          <div className="flex items-center gap-2 shrink-0">
-            <Book className="w-2.5 h-2.5 md:w-3 h-3" />
-            <span className="truncate max-w-[150px] md:max-w-none">The Crimson Queen</span>
+        <footer className="mt-20 md:mt-32 pt-12 md:pt-16 border-t border-amber-900/15 relative z-10 w-full group/footer flex flex-col items-center px-8 md:px-16 lg:px-24">
+          {/* Breaking Title (Perfectly Centered on the line) */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0a0a0a] px-6 py-1 transition-all duration-1000 group-hover/footer:px-16 group-hover/footer:text-amber-600/60 overflow-visible text-center">
+            <h1 className="font-display text-[10px] md:text-sm lg:text-lg tracking-[0.4em] text-amber-800/10 uppercase transition-all duration-1000 group-hover/footer:tracking-[0.8em] group-hover/footer:text-amber-600/60 cursor-default leading-none whitespace-nowrap">
+              The Crimson Queen
+            </h1>
           </div>
           
-          <div className="flex flex-wrap justify-center gap-3 md:gap-8 items-center w-full md:w-auto">
-            <button
-              onClick={() => setShowCompendium(true)}
-              className="group relative px-3 py-1.5 md:px-6 md:py-2 border border-amber-900/30 text-amber-900/60 hover:text-amber-600 hover:border-amber-700/50 transition-all uppercase tracking-[0.2em] md:tracking-[0.4em] text-[7px] md:text-[10px] cursor-pointer flex-1 md:flex-none text-center"
-            >
-              <div className="flex items-center justify-center gap-1.5 md:gap-3">
-                <Shield className="w-2.5 h-2.5 md:w-3 h-3" />
-                <span className="whitespace-nowrap">人物志 · Compendium</span>
-              </div>
-            </button>
+          {/* Centered Functional Buttons */}
+          <div className="flex flex-col items-center gap-6 md:gap-8 w-full">
+            <div className="flex items-center justify-center gap-4 md:gap-12">
+              <button
+                onClick={() => setShowCompendium(true)}
+                className="group/btn relative px-3 py-1.5 md:px-8 md:py-2.5 border border-amber-900/20 text-amber-900/40 hover:text-amber-600 hover:border-amber-700/50 transition-all uppercase tracking-[0.2em] md:tracking-[0.4em] text-[7px] md:text-[10px] cursor-pointer"
+              >
+                <div className="flex items-center justify-center gap-1.5 md:gap-3">
+                  <Shield className="w-2.5 h-2.5 md:w-3 h-3 opacity-40 group-hover/btn:opacity-100 transition-opacity" />
+                  <span className="whitespace-nowrap hidden sm:inline">人物志 · Compendium</span>
+                  <span className="whitespace-nowrap sm:hidden">人物志</span>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => setShowMap(true)}
+                className="group/btn relative px-3 py-1.5 md:px-8 md:py-2.5 border border-emerald-900/20 text-emerald-900/40 hover:text-emerald-500 hover:border-emerald-700/50 transition-all uppercase tracking-[0.2em] md:tracking-[0.4em] text-[7px] md:text-[10px] cursor-pointer"
+              >
+                <div className="flex items-center justify-center gap-1.5 md:gap-3">
+                  <Scroll className="w-2.5 h-2.5 md:w-3 h-3 opacity-40 group-hover/btn:opacity-100 transition-opacity" />
+                  <span className="whitespace-nowrap hidden sm:inline">地图 · World Map</span>
+                  <span className="whitespace-nowrap sm:hidden">地图</span>
+                </div>
+              </button>
+            </div>
             
-            <button
-              onClick={() => setShowMap(true)}
-              className="group relative px-3 py-1.5 md:px-6 md:py-2 border border-emerald-900/30 text-emerald-900/60 hover:text-emerald-500 hover:border-emerald-700/50 transition-all uppercase tracking-[0.2em] md:tracking-[0.4em] text-[7px] md:text-[10px] cursor-pointer flex-1 md:flex-none text-center"
-            >
-              <div className="flex items-center justify-center gap-1.5 md:gap-3">
-                <Scroll className="w-2.5 h-2.5 md:w-3 h-3" />
-                <span className="whitespace-nowrap">地图 · World Map</span>
-              </div>
-            </button>
-            
-            <span className="text-amber-900/30 text-[7px] md:text-[9px] shrink-0">{currentScene.id}</span>
+            {/* Scene ID (Subtle alignment at the very bottom) */}
+            <div className="flex items-center gap-4 opacity-5">
+              <div className="h-px w-6 bg-amber-900/40" />
+              <span className="text-[6px] md:text-[8px] uppercase tracking-[0.5em] font-mono">{currentScene.id}</span>
+              <div className="h-px w-6 bg-amber-900/40" />
+            </div>
           </div>
         </footer>
-          </main>
-        )}
-      </AnimatePresence>
-    </div>
+      </main>
+    )}
+  </AnimatePresence>
+</div>
   );
 }
 

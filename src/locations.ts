@@ -40,7 +40,7 @@ export const locations: Location[] = [
   },
   {
     id: 'reg_south',
-    name: '南境 · The South',
+    name: '南境',
     faction: '斯特莱家族 (House Stray)',
     description: '征服王国的粮仓，多平原、河流、耕地与森林。南境大公爵暨全境守护斯特莱家族统治着这片丰饶的土地。',
     x: 50,
@@ -68,10 +68,10 @@ export const locations: Location[] = [
   // Central
   {
     id: 'kase_city',
-    name: '王城凯斯 (Kase)',
+    name: '王城',
     faction: '赫西王室',
-    description: '征服王国的首都，坐落于中央河间地。它是权力的巅峰，也是所有阴谋与荣耀的终点 Boris。',
-    ruler: '征服王 赫西 (King Hersey)',
+    description: '征服王国的首都，坐落于中央河间地。它是权力的巅峰，也是所有阴谋与荣耀的终点。',
+    ruler: '征服王 劳顿·赫西',
     x: 50,
     y: 40,
     path: 'all',
@@ -80,15 +80,27 @@ export const locations: Location[] = [
   },
   {
     id: 'holy_spring',
-    name: '圣泉大教堂',
+    name: '凯斯大圣堂',
     faction: '七神教会',
-    description: '位于王城凯斯之内的宏伟建筑，是征服王国宗教信仰的中心。',
-    ruler: '教皇 克莱门特 (High Septon Clement)',
+    description: '位于王城凯斯之内的宏伟建筑，是征服王国宗教信仰的中心。南境总主教瓦兰提尔·诺恩的许多密令皆源于此。',
+    ruler: '大主教 昆提斯·德罗斯特',
     x: 52,
     y: 42,
     path: 'all',
     region: 'Central',
-    matchNames: ['圣泉大教堂', '凯斯大教堂', '凯斯大圣堂']
+    matchNames: ['凯斯大教堂', '大圣堂']
+  },
+  {
+    id: 'oakport_cathedral',
+    name: '橡港大教堂',
+    faction: '七神教会',
+    description: '位于南境重要港口城市橡港的大教堂，是南境总主教瓦兰提尔·诺恩的驻地。',
+    ruler: '瓦兰提尔·诺恩',
+    x: 60,
+    y: 85,
+    path: 'fox',
+    region: 'South',
+    matchNames: ['橡港']
   },
   {
     id: 'sages_keep',
@@ -141,27 +153,78 @@ export const locations: Location[] = [
 
   // South
   {
+    id: 'verdant_vale',
+    name: '翠谷 · Verdant Vale',
+    faction: '赫西王室',
+    description: '南境北部的一片丰饶子区域，气候宜人，绿意盎然。溪木堡、瓦列堡等重要地标皆坐落于此谷地之中。这里曾是赫西王室的私有猎场，也是公主成长的地方。',
+    x: 46,
+    y: 64,
+    path: 'all',
+    region: 'South',
+    isRegionLabel: true,
+    isSubRegion: true,
+    matchNames: ['翠绿谷地', '翠谷']
+  },
+  {
     id: 'creekwood_castle',
     name: '溪木堡',
     faction: '赫西王室 (夏宫)',
-    description: '位于南境北部的翠谷，是凯瑟琳公主长大的地方。这里绿野环绕，远离王城的喧嚣。',
-    ruler: '凯瑟琳公主 (Princess Catherine)',
+    description: '位于翠谷腹地，是凯瑟琳公主长大的地方。这里绿野环绕，远离王城的喧嚣。城堡本身就是王室的夏宫。',
+    ruler: '凯瑟琳公主',
     x: 45,
     y: 65,
     path: 'fox',
     region: 'South',
-    matchNames: ['溪木堡', '翠谷']
+    parentId: 'verdant_vale',
+    matchNames: ['溪木堡']
+  },
+  {
+    id: 'grove_village',
+    name: '林谷村',
+    faction: '南境平民领',
+    description: '紧邻溪木堡的小村庄，中间只隔着一座茂密的森林。芬因·里德与他的母亲爱琳居住于此。',
+    x: 47,
+    y: 67,
+    path: 'fox',
+    region: 'South',
+    parentId: 'verdant_vale',
+    matchNames: ['林谷村']
+  },
+  {
+    id: 'lancani_falls',
+    name: '兰卡尼瀑布',
+    faction: '自然景观',
+    description: '位于翠谷深处的宏伟瀑布，瀑流水声如同一首歌，陪伴着凯瑟琳的成长。',
+    x: 44,
+    y: 63,
+    path: 'fox',
+    region: 'South',
+    parentId: 'verdant_vale',
+    matchNames: ['兰卡尼瀑布', '瀑布']
+  },
+  {
+    id: 'mount_bendi',
+    name: '本迪山',
+    faction: '自然景观',
+    description: '翠谷远处的雄伟山脉，其走势形如睡狮与卧剑，是南境北方的重要地理坐标。',
+    x: 48,
+    y: 60,
+    path: 'fox',
+    region: 'South',
+    parentId: 'verdant_vale',
+    matchNames: ['本迪山']
   },
   {
     id: 'valles_keep',
     name: '瓦列堡',
     faction: '瓦列家族',
-    description: '瓦列堡家族的根据地，位于南境主道与林路的交汇处。这里的学士消息灵通。',
+    description: '瓦列堡家族的根据地，位于翠谷西侧，也是南境主道与林路的交汇处。这里的学士消息灵通。',
     ruler: '瓦列男爵 (Baron Valles)',
     x: 42,
-    y: 68,
+    y: 67,
     path: 'fox',
     region: 'South',
+    parentId: 'verdant_vale',
     matchNames: ['瓦列堡']
   },
   {

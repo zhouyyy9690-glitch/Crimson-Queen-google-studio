@@ -71,7 +71,9 @@ export interface Location {
   y: number; // 0-100 percentage
   path?: 'fox' | 'deer' | 'eagle' | 'all';
   region?: 'North' | 'West' | 'South' | 'East' | 'Central';
+  parentId?: string;
   isRegionLabel?: boolean;
+  isSubRegion?: boolean;
   matchNames?: string[];
 }
 

@@ -141,7 +141,7 @@ export const characters: Character[] = [
     name: '埃德加·斯特莱',
     nameEn: 'Edgar Stray',
     title: '南境守护之子',
-    description: '斯特莱家族的成员，南境领主的继承人之一。他与雷蒙德·瓦列一同护送女王。',
+    description: '斯特莱家族的成员，南境领主的次子。他与雷蒙德·瓦列一同护送女王。',
     unlockedAt: 'F4-ValantirNohnboesdowntoyou',
     iconType: 'sword',
     path: 'fox'
@@ -241,7 +241,7 @@ export const characters: Character[] = [
     name: '埃蒂安·德·雷斯多',
     nameEn: 'Etienne de Lesdos',
     title: '雷斯多家的长子',
-    description: '达里安的大哥，家族未来的继承人。他沉稳、严肃，承担着家族的重任。',
+    description: '达里安的大哥，家族未来的继承人。他沉稳温和，承担着家族的重任。',
     unlockedAt: 'd1-deer',
     iconType: 'sword',
     path: 'deer'
@@ -315,5 +315,25 @@ export const characters: Character[] = [
     iconType: 'heart',
     path: 'fox',
     unlockedAt: 'F41-LeaveWithFain'
+  },
+  {
+    id: 'laughton',
+    name: '劳顿·赫西',
+    nameEn: 'Laughton Hersey',
+    title: '征服者之王',
+    description: '凯瑟琳的父亲，征服王国的国王。一个威严而神秘的人物，他的命运与王国的存亡紧紧相连。',
+    iconType: 'ring',
+    path: 'common',
+    unlockedAt: 'F5-LaughtonAndIsabella'
+  },
+  {
+    id: 'isabella',
+    name: '伊莎贝拉·赫西',
+    nameEn: 'Isabella Hersey',
+    title: '征服王国之王后',
+    description: '凯瑟琳的母亲，劳顿·赫西的王后。据说她拥有惊人的美貌与非凡的智慧。',
+    iconType: 'heart',
+    path: 'common',
+    unlockedAt: 'F5-LaughtonAndIsabella'
   }
 ];
