@@ -59,6 +59,7 @@ import { AnimalPattern } from './components/AnimalPattern';
 import { ChroniclerTransition } from './components/ChroniclerTransition';
 import { GameHeader } from './components/GameHeader';
 import { GameFooter } from './components/GameFooter';
+import { IntroScreen } from './components/IntroScreen';
 import ParticleBackground from './components/ParticleBackground';
 import CustomCursor from './components/CustomCursor';
 
@@ -107,7 +108,8 @@ export default function App() {
   const [sfxVolume, setSfxVolume] = useState(0.3);
   const [showVolumeMixer, setShowVolumeMixer] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
-  
+  const [showIntro, setShowIntro] = useState(true);
+
   // 引用管理：音频实例与通知计时器
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -784,6 +786,13 @@ export default function App() {
       {/* 自定义鼠标指针组件 */}
       <CustomCursor />
       
+      {/* 开场动画层 */}
+      <AnimatePresence>
+        {showIntro && (
+          <IntroScreen onComplete={() => setShowIntro(false)} />
+        )}
+      </AnimatePresence>
+
       {/* 墨水失真与羊皮纸滤镜：通过 SVG filter 实现复古质感 */}
       <svg style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}>
         <filter id="ink-distortion">
