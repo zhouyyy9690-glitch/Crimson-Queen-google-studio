@@ -125,12 +125,12 @@ export const ChapterSplash: React.FC<ChapterSplashProps> = ({
             <motion.h1 
               animate={isExiting ? { letterSpacing: "0.3em", opacity: 0.6 } : {}}
               transition={{ duration: 2.5 }}
-              className="font-typewriter text-4xl md:text-6xl text-amber-900 tracking-tight leading-none"
+              className="font-display text-4xl md:text-6xl text-amber-900 tracking-tight leading-none"
             >
               {chapterTitle}
             </motion.h1>
             {chapterSubtitle && (
-              <p className="font-typewriter italic text-amber-800/70 text-xl md:text-2xl tracking-widest uppercase">
+              <p className="font-gothic italic text-amber-800/70 text-xl md:text-2xl tracking-widest uppercase">
                 {chapterSubtitle}
               </p>
             )}

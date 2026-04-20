@@ -44,7 +44,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
           transition={{ delay: 1.5, duration: 2 }}
           className="font-gothic text-base md:text-xl tracking-[0.3em] text-[#8a6e4b] mt-4"
         >
-          ✦ 红女王 ✦
+          ✦ 绛红女王 ✦
         </motion.div>
       </div>
 

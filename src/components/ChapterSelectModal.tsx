@@ -18,8 +18,9 @@ const ChapterMapPreview = ({ chapter, isUnlocked, unlockedLocations }: { chapter
   const { x, y, scale } = chapter.mapFocus;
   
   // 筛选该章节需要高亮的地点
-  const activeLocations = locations.filter(loc => 
-    chapter.highlightLocations?.includes(loc.id)
+  const activeLocations = React.useMemo(() => 
+    locations.filter(loc => chapter.highlightLocations?.includes(loc.id)),
+    [chapter.highlightLocations]
   );
 
   return (
@@ -32,7 +33,7 @@ const ChapterMapPreview = ({ chapter, isUnlocked, unlockedLocations }: { chapter
           y: [y * 0.9, y * 1.1, y * 0.9]
         }}
         transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0 select-none"
+        className="absolute inset-0 select-none will-change-transform"
       >
         {/* 底层地图纹理 */}
         <div 
@@ -98,10 +99,10 @@ const ChapterMapPreview = ({ chapter, isUnlocked, unlockedLocations }: { chapter
                   
                   {/* 地点名称标签 */}
                   <div className={`
-                    mt-3 px-3 py-1 backdrop-blur-sm border transition-all duration-700
+                    mt-3 px-3 py-1 border transition-all duration-700
                     ${isMarkerLit && isUnlocked 
-                      ? 'bg-black/40 border-amber-900/10' 
-                      : 'bg-black/10 border-white/5 opacity-20'}
+                      ? 'bg-black/70 border-amber-900/10' 
+                      : 'bg-black/20 border-white/5 opacity-20'}
                   `}>
                     <span className={`
                       font-typewriter text-[9px] uppercase tracking-[0.3em] whitespace-nowrap flex items-center gap-2
@@ -133,7 +134,7 @@ const ChapterMapPreview = ({ chapter, isUnlocked, unlockedLocations }: { chapter
 
       {/* 未解锁遮罩 */}
       {!isUnlocked && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-md z-50">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-50">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -179,10 +180,11 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
       <motion.div 
         initial={{ scale: 0.95, opacity: 0, y: 40 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        className="relative w-full h-full lg:w-[1400px] lg:h-[800px] shadow-[0_60px_120px_-20px_rgba(0,0,0,1)] flex flex-col md:flex-row bg-[#0c0c0c] border border-amber-900/10 overflow-hidden md:m-12"
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="relative w-full h-full lg:w-[1400px] lg:h-[800px] shadow-[0_60px_120px_-20px_rgba(0,0,0,1)] flex flex-col md:flex-row bg-[#0c0c0c] border border-amber-900/10 overflow-hidden md:m-12 will-change-transform"
       >
         {/* 书脊阴影：增强 3D 厚重感 */}
-        <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-48 bg-gradient-to-r from-transparent via-black/60 to-transparent z-40 pointer-events-none hidden md:block" />
+        <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-48 bg-gradient-to-r from-transparent via-black/40 to-transparent z-40 pointer-events-none hidden md:block" />
 
         <OrnateCorner position="tl" />
         <OrnateCorner position="tr" />
@@ -205,14 +207,14 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
             >
               <div className="flex flex-col mb-6 md:mb-10">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="font-typewriter italic text-amber-900/40 text-sm md:text-lg lg:text-xl tracking-[0.3em]">
+                  <span className="font-chinese italic text-amber-900/40 text-sm md:text-lg lg:text-xl tracking-[0.3em] font-medium">
                     {currentChapter.number}
                   </span>
                 </div>
                 
                 <div className="w-12 md:w-16 h-px bg-amber-900/30 mb-4 md:mb-8" />
                 
-                <h1 className={`font-typewriter text-3xl md:text-5xl lg:text-7xl tracking-tighter leading-tight ${isUnlocked ? 'text-amber-100/90' : 'text-neutral-800'}`}>
+                <h1 className={`font-chinese text-3xl md:text-5xl lg:text-7xl tracking-tighter leading-tight font-medium ${isUnlocked ? 'text-amber-100/90' : 'text-neutral-800'}`}>
                   {currentChapter.title}
                 </h1>
                 <p className="font-typewriter text-[8px] md:text-[10px] lg:text-xs text-amber-900/60 uppercase tracking-[0.5em] mt-3 md:mt-4 mb-2">
@@ -323,7 +325,7 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
                 )}
               </div>
 
-              <div className="flex-grow space-y-6 md:space-y-10 overflow-y-auto scrollbar-hide">
+              <div className="flex-grow space-y-6 md:space-y-10 overflow-y-auto no-scrollbar mobile-no-scrollbar">
                 <div className="relative pl-6 md:pl-8">
                   <p className={`text-sm md:text-base lg:text-xl font-serif italic leading-[1.8] max-w-lg ${isUnlocked ? 'text-neutral-400' : 'text-neutral-800'}`}>
                     {currentChapter.description}
@@ -336,7 +338,7 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
                     whileHover={{ scale: 1.05, backgroundColor: 'rgba(217, 119, 6, 0.05)' }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => onSelect(currentChapter.id)}
-                    className="flex items-center gap-4 md:gap-5 px-6 md:px-10 py-3 md:py-5 bg-amber-900/10 border border-amber-900/20 hover:border-amber-600/60 text-amber-600 uppercase tracking-[0.4em] text-[8px] md:text-xs transition-all group mt-6 md:mt-16 shadow-lg"
+                    className="flex items-center gap-4 md:gap-5 px-6 md:px-10 py-3 md:py-5 bg-amber-900/10 border border-amber-900/20 hover:border-amber-600/60 text-amber-600 uppercase tracking-[0.4em] text-[8px] md:text-xs font-chinese font-medium transition-all group mt-6 md:mt-16 shadow-lg"
                   >
                     <Play className="w-3 h-3 md:w-4 md:h-4 fill-current group-hover:text-amber-400 transition-colors" />
                     揭开记忆 · Recall the Path
@@ -388,13 +390,13 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
         <div className="absolute bottom-8 md:bottom-auto md:top-1/2 left-0 right-0 md:-translate-y-1/2 flex justify-center md:justify-between px-8 md:px-12 pointer-events-none gap-12 md:gap-0 z-[100]">
           <button 
             onClick={(e) => { e.stopPropagation(); prevPage(); }}
-            className="w-10 h-10 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-amber-900/20 text-amber-900/50 hover:text-amber-500 hover:border-amber-600 hover:scale-110 active:scale-95 transition-all pointer-events-auto group"
+            className="w-10 h-10 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-black/80 border border-amber-900/20 text-amber-900/50 hover:text-amber-500 hover:border-amber-600 hover:scale-110 active:scale-95 transition-all pointer-events-auto group"
           >
             <ChevronLeft className="w-6 h-6 md:w-10 md:h-10 transition-transform group-hover:-translate-x-1" />
           </button>
           <button 
             onClick={(e) => { e.stopPropagation(); nextPage(); }}
-            className="w-10 h-10 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-amber-900/20 text-amber-900/50 hover:text-amber-500 hover:border-amber-600 hover:scale-110 active:scale-95 transition-all pointer-events-auto group"
+            className="w-10 h-10 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-black/80 border border-amber-900/20 text-amber-900/50 hover:text-amber-500 hover:border-amber-600 hover:scale-110 active:scale-95 transition-all pointer-events-auto group"
           >
             <ChevronRight className="w-6 h-6 md:w-10 md:h-10 transition-transform group-hover:translate-x-1" />
           </button>

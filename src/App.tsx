@@ -71,6 +71,32 @@ const FlowerBloomEffect = () => {
 };
 
 export default function App() {
+  // --- 测试模式探测 ---
+  // 通过 URL 参数 ?testMode=true 激活。为了防止页面自动刷新导致后缀丢失，
+  // 我们会将其记录在 localStorage 中。如果发现 localStorage 中有而在 URL 中没有，我们会尝试补回 URL。
+  const isTestMode = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    const urlParam = params.get('testMode');
+    
+    if (urlParam === 'true') {
+      localStorage.setItem('hersey_test_mode_active', 'true');
+    } else if (urlParam === 'false') {
+      localStorage.setItem('hersey_test_mode_active', 'false');
+    }
+    
+    const active = localStorage.getItem('hersey_test_mode_active') === 'true';
+    
+    // 如果激活了测试模式但 URL 里没了（例如代码更新重启后），尝试补回 URL 方便查看
+    if (active && urlParam !== 'true' && window.history.replaceState) {
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('testMode', 'true');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+    
+    return active;
+  }, []);
+
   // --- 核心状态 (Core States) ---
   // 当前场景 ID，初始为 gameData 中定义的初始场景
   const [currentSceneId, setCurrentSceneId] = useState<string>(gameData.initialScene);
@@ -108,7 +134,7 @@ export default function App() {
   const [sfxVolume, setSfxVolume] = useState(0.3);
   const [showVolumeMixer, setShowVolumeMixer] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const [showIntro, setShowIntro] = useState(true);
+  const [showIntro, setShowIntro] = useState(!isTestMode); // 测试模式下默认跳过开场动画
 
   // 引用管理：音频实例与通知计时器
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -249,21 +275,22 @@ export default function App() {
       const data = JSON.parse(saved);
       setCurrentSceneId(data.currentSceneId);
       setCurrentStageId(data.currentStageId);
-      setHistory(data.history);
+      setHistory(data.history || []);
       setCurrentParaIndex(data.currentParaIndex);
       setCurrentPath(data.currentPath);
-      setFlags(data.flags);
-      setUnlockedCharacters(new Set(data.unlockedCharacters));
+      setFlags(data.flags || {});
+      setUnlockedCharacters(new Set(data.unlockedCharacters || []));
       if (data.seenCharacterNames) setSeenCharacterNames(new Set(data.seenCharacterNames));
       if (data.unlockedLocations) setUnlockedLocations(new Set(data.unlockedLocations));
       if (data.seenLocationNames) setSeenLocationNames(new Set(data.seenLocationNames));
       if (data.unlockedInsights) setUnlockedInsights(new Set(data.unlockedInsights));
       if (data.unlockedChapters) setUnlockedChapters(data.unlockedChapters);
       if (data.chapterSnapshots) setChapterSnapshots(data.chapterSnapshots);
-      setVisitedTexts(data.visitedTexts);
+      setVisitedTexts(data.visitedTexts || []);
       setIsStarting(true);
       setShowProgress(false);
       setIsMenuExpanded(false);
+      console.log("🛠️ [测试模式] 进度已成功从本地存储恢复");
     }
   };
 
@@ -274,9 +301,30 @@ export default function App() {
     resetGame();
   };
 
+  // --- 测试模式生命周期管理 ---
   useEffect(() => {
+    if (isTestMode) {
+      loadGame();
+    } else {
+      console.log("🎮 正常模式：游戏将从头开始");
+    }
     setIsLoaded(true);
-  }, []);
+  }, [isTestMode]);
+
+  // 测试模式下的自动保存：当核心进度更新时自动存盘
+  useEffect(() => {
+    if (isTestMode && isLoaded) {
+      saveGame();
+    }
+  }, [
+    currentSceneId, 
+    currentStageId, 
+    currentParaIndex, 
+    currentPath, 
+    flags, 
+    unlockedChapters, 
+    isLoaded
+  ]);
 
   // 处理剧情自动转场：满足特定标志位时自动移动到新场景
   useEffect(() => {
