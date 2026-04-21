@@ -68,23 +68,103 @@ export const SceneDisplay = ({
   const textSegments = useMemo(() => paraObj ? renderTextWithDialogue(paraObj.text, paraObj.isThought) : [], [paraObj, renderTextWithDialogue]);
   
   const timeInfo = useMemo(() => {
+    // Hide for ending scenes
+    const isEnding = sceneId.toLowerCase().includes('ending');
+    if (isEnding) return null;
+
     switch (particleType) {
-      case 'dust': return { label: 'Aurea Mane', subLabel: '正午' };
-      case 'evening': return { label: 'Vesperis', subLabel: '暮色' };
-      case 'nature': return { label: 'Silen Nocte', subLabel: '寂静之夜' };
+      case 'dust': return { latin: 'Aurea Mane', colorClass: 'text-amber-500', glowClass: 'bg-amber-400' };
+      case 'evening': return { latin: 'Vesperis', colorClass: 'text-orange-600', glowClass: 'bg-orange-500' };
+      case 'nature': return { latin: 'Silen Nocte', colorClass: 'text-blue-500', glowClass: 'bg-blue-400' };
       default: return null;
     }
-  }, [particleType]);
+  }, [particleType, sceneId]);
 
-  const isKillScene = [
-    'ForgottenPrincess-kill', 'ForgottenPrincess-kill1',
-    'MoonlightEscape-kill', 'MoonlightEscape-kill1',
-    'LegendoftheGreenValley-kill', 'LegendoftheGreenValley-kill2',
-    'F41_TrapDeath-1'
-  ].includes(sceneId);
+  const isKillScene = sceneId.toLowerCase().includes('kill') || sceneId === 'F41_TrapDeath-1';
+  
+  // Override colors for kill scenes
+  const themeColorClass = isKillScene ? 'text-rose-600' : (timeInfo?.colorClass || 'text-amber-900/40');
+  const themeGlowClass = isKillScene ? 'bg-rose-500' : (timeInfo?.glowClass || 'bg-amber-400');
+
+  // Reusable Sign of Seven element
+  // Clock-style Sign of Seven for the side margin
+  const ChronoClock = ({ className = "" }: { className?: string }) => {
+    // 7 stars surrounding a central diamond
+    const stars = Array.from({ length: 7 });
+    return (
+      <div className={`flex flex-col items-center ${className}`}>
+        {/* Hanging Ornament Line */}
+        <div className="w-px h-16 md:h-24 bg-gradient-to-b from-transparent via-current to-current opacity-20" />
+        
+        {/* The Clock Container */}
+        <div className="relative w-16 h-16 flex items-center justify-center mt-[-4px]">
+          {/* Central Core */}
+          <div className="relative w-5 h-5 flex items-center justify-center z-10">
+            <div className="absolute inset-0 rotate-45 border border-current opacity-40" />
+            <div className={`w-2 h-2 rounded-full blur-[1px] opacity-90 ${themeGlowClass}`} />
+          </div>
+          
+          {/* Supporting Circular Frame */}
+          <div className="absolute inset-0 rounded-full border border-current opacity-5 scale-90" />
+          <div className="absolute inset-2 rounded-full border border-dotted border-current opacity-10" />
+
+          {/* The 7 Stars */}
+          {stars.map((_, i) => (
+            <div
+              key={i}
+              className="absolute"
+              style={{
+                transform: `rotate(${(i * 360) / 7}deg) translateY(-24px)`
+              }}
+            >
+              <div className={`w-1 h-1 rounded-full bg-current ${i === 0 ? 'scale-150' : 'opacity-40'}`} />
+            </div>
+          ))}
+        </div>
+
+        {/* Decorative Seal Bottom */}
+        <div className="w-2 h-2 rotate-45 border border-current opacity-20 mt-2" />
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-8 lg:space-y-6 relative">
+      {/* Fixed Position Chrono Clock: Hanging from Top Left */}
+      {timeInfo && (
+        <div className="fixed left-4 md:left-12 top-0 z-[60] pointer-events-none">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 1 }}
+            className={themeColorClass}
+          >
+            <ChronoClock />
+          </motion.div>
+        </div>
+      )}
+
+      {/* NEW: In-game Save Trigger (Right Side) */}
+      {!showStartTrigger && !showChoices && !showEnding && (
+        <div className="fixed right-4 md:right-12 top-1/2 -translate-y-1/2 z-[60]">
+          <motion.button
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            whileHover={{ scale: 1.1 }}
+            onClick={() => setShowProgress(true)}
+            className="flex flex-col items-center gap-2 group cursor-none"
+            title="手动记录当前进度"
+          >
+            <div className="w-10 h-10 rounded-full border border-amber-900/40 flex items-center justify-center bg-black/40 backdrop-blur-sm group-hover:border-amber-600 transition-colors">
+              <Sword className="w-5 h-5 text-amber-700/60 group-hover:text-amber-500 transition-colors rotate-45" />
+            </div>
+            <span className="text-[8px] uppercase tracking-widest text-amber-900/40 group-hover:text-amber-600 transition-colors [writing-mode:vertical-lr]">
+              Record
+            </span>
+          </motion.button>
+        </div>
+      )}
+
       <div className="text-left relative z-10">
         <motion.div
            initial={{ opacity: 0, y: -10 }}
@@ -93,53 +173,37 @@ export const SceneDisplay = ({
              y: 0,
            }}
            transition={{ duration: 0.8 }}
+           className="flex flex-col items-center"
         >
+          {/* 1. Scene Title */}
           <motion.h2 
-            className="font-display text-3xl md:text-5xl lg:text-4xl text-amber-600 tracking-wider leading-tight mb-2 text-center"
+            className="font-display text-4xl md:text-5xl lg:text-5xl text-amber-600 tracking-wider leading-tight mb-8 text-center"
           >
             {sceneTitle}
-            {stageId && (
-              <div className="space-y-4 mt-2">
-                <span className="block text-xs md:text-sm text-amber-900/40 tracking-[0.5em] uppercase">— {stageId} —</span>
-                
-                {timeInfo && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex flex-col items-center gap-3"
-                  >
-                    {/* Seven Stars Symbol */}
-                    <div className="flex items-center gap-2 text-amber-900/40">
-                      {[0.3, 0.5, 0.8].map((op, i) => (
-                        <div key={`star-l-${i}`} className="w-1 h-1 rounded-full bg-current" style={{ opacity: op }} />
-                      ))}
-                      <div className="w-2.5 h-2.5 rotate-45 border border-amber-900/60 flex items-center justify-center">
-                        <div className="w-1 h-1 bg-amber-600 rounded-full blur-[1px]" />
-                      </div>
-                      {[0.8, 0.5, 0.3].map((op, i) => (
-                        <div key={`star-r-${i}`} className="w-1 h-1 rounded-full bg-current" style={{ opacity: op }} />
-                      ))}
-                    </div>
-
-                    <div className="flex flex-col items-center">
-                      <span className={`font-mono text-[9px] tracking-[0.4em] uppercase ${isKillScene ? 'text-rose-600' : 'text-amber-900/30'}`}>
-                        {timeInfo.label}
-                      </span>
-                      <span className={`font-typewriter text-[10px] tracking-[0.2em] mt-1 ${isKillScene ? 'text-rose-600/60' : 'text-amber-900/20'}`}>
-                        {timeInfo.subLabel}
-                      </span>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-            )}
           </motion.h2>
-          <div className="w-24 md:w-32 h-1 bg-gradient-to-r from-transparent via-amber-900/40 to-transparent mx-auto mb-6 lg:mb-4 relative">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rotate-45 border border-amber-900/60 bg-[#0a0a0a]" />
+
+          {/* 2. Ornate Divider (directly below title) */}
+          <div className="w-32 md:w-56 h-px bg-gradient-to-r from-transparent via-amber-900/30 to-transparent mx-auto relative mb-6">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rotate-45 border border-amber-900/50 bg-[#0a0a0a]" />
           </div>
+
+          {/* 3. Latin Time Prompt (below divider) */}
+          {timeInfo && (
+            <motion.div 
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`flex flex-col items-center transition-colors duration-1000 ${themeColorClass}`}
+            >
+              <span className="font-mono text-[10px] md:text-xs tracking-[0.8em] uppercase opacity-60">
+                {timeInfo.latin}
+              </span>
+            </motion.div>
+          )}
+
+          <div className="h-4" />
         </motion.div>
 
-        <div className="min-h-[120px] lg:min-h-[150px] flex items-center justify-center">
+        <div className="min-h-[120px] lg:min-h-[150px] flex items-center justify-center mt-8">
           {paraObj && (
             <motion.p 
               initial={{ opacity: 0 }}

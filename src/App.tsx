@@ -246,7 +246,7 @@ export default function App() {
 
   // --- 数据持久化与生命周期 (Persistence & Lifecycle) ---
 
-  // 保存当前游戏状态到本地存储
+  // 保存当前游戏状态到本地存储 (自动存档)
   const saveGame = () => {
     const gameState = {
       currentSceneId,
@@ -268,9 +268,33 @@ export default function App() {
     localStorage.setItem('hersey_save_data', JSON.stringify(gameState));
   };
 
-  // 从本地存储加载游戏状态
-  const loadGame = () => {
-    const saved = localStorage.getItem('hersey_save_data');
+  // 1. 手动存档逻辑
+  const manualSaveGame = () => {
+    const gameState = {
+      currentSceneId,
+      currentStageId,
+      history,
+      currentParaIndex,
+      currentPath,
+      flags,
+      unlockedCharacters: Array.from(unlockedCharacters),
+      seenCharacterNames: Array.from(seenCharacterNames),
+      unlockedLocations: Array.from(unlockedLocations),
+      seenLocationNames: Array.from(seenLocationNames),
+      unlockedInsights: Array.from(unlockedInsights),
+      visitedTexts,
+      unlockedChapters,
+      chapterSnapshots,
+      timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('hersey_manual_save', JSON.stringify(gameState));
+    triggerNotification('进度已记录至「编年史之剑」', 'insight');
+  };
+
+  // 2. 加载指定类型的存档
+  const loadSaveData = (type: 'auto' | 'manual') => {
+    const key = type === 'manual' ? 'hersey_manual_save' : 'hersey_save_data';
+    const saved = localStorage.getItem(key);
     if (saved) {
       const data = JSON.parse(saved);
       setCurrentSceneId(data.currentSceneId);
@@ -290,9 +314,12 @@ export default function App() {
       setIsStarting(true);
       setShowProgress(false);
       setIsMenuExpanded(false);
-      console.log("🛠️ [测试模式] 进度已成功从本地存储恢复");
+      console.log(`🛠️ [测试模式] ${type === 'manual' ? '手动' : '自动'}进度已成功恢复`);
     }
   };
+
+  // 从本地存储加载游戏状态
+  const loadGame = () => loadSaveData('auto');
 
   // 返回标题画面并重置临时状态
   const returnToTitle = () => {
@@ -1010,8 +1037,8 @@ export default function App() {
         <ProgressSave 
           showProgress={showProgress}
           setShowProgress={setShowProgress}
-          loadGame={loadGame}
-          saveGame={saveGame}
+          loadGame={loadSaveData}
+          manualSaveGame={manualSaveGame}
         />
 
         {/* 音量调音台遮罩 */}
@@ -1088,6 +1115,7 @@ export default function App() {
             <ChapterSelectModal
               unlockedChapters={unlockedChapters}
               unlockedLocations={Array.from(unlockedLocations)}
+              history={history}
               onSelect={loadFromChapter}
               onClose={() => setShowChapterSelect(false)}
               onReset={resetAllProgress}

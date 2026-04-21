@@ -138,20 +138,30 @@ export const WorldMap = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[150] bg-[#0a0a0a] p-4 md:p-8 overflow-hidden flex flex-col"
+            className="fixed inset-0 z-[150] bg-[#050505] overflow-hidden flex items-center justify-center"
           >
-            <div className="max-w-6xl mx-auto w-full flex-grow flex flex-col pt-12 md:pt-16">
-              {/* 顶部标题与交互说明 */}
-              <div className="flex justify-between items-center mb-6 md:mb-8 border-b border-amber-900/20 pb-4 md:pb-6">
-                <div className="flex items-center gap-4">
-                  <Scroll className="w-5 h-5 md:w-6 md:h-6 text-emerald-600" />
-                  <h3 className="font-display text-xl md:text-2xl text-emerald-600 tracking-widest uppercase">征服王国全图 · World Map</h3>
+            {/* Background Textures matching ChapterSelectModal */}
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-20 pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(30,20,10,0.3)_0%,transparent_100%)] pointer-events-none" />
+
+            <div className="w-full h-full md:m-8 lg:m-12 relative flex flex-col bg-[#0c0c0c] border border-amber-900/10 shadow-[0_40px_80px_rgba(0,0,0,0.8)] overflow-hidden">
+              {/* Ornate Corners */}
+              <OrnateCorner position="tl" />
+              <OrnateCorner position="tr" />
+              <OrnateCorner position="bl" />
+              <OrnateCorner position="br" />
+
+              {/* 顶部标题与交互说明 - Floating top bar */}
+              <div className="absolute top-0 left-0 right-0 z-[160] px-12 py-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+                <div className="flex items-center gap-4 pointer-events-auto">
+                  <Scroll className="w-5 h-5 md:w-6 md:h-6 text-emerald-600 drop-shadow-[0_0_8px_rgba(5,150,105,0.4)]" />
+                  <h3 className="font-display text-xl md:text-2xl text-emerald-600 tracking-widest uppercase drop-shadow-md">征服王国全图 · World Map</h3>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="hidden md:flex items-center gap-3 text-[10px] text-amber-900/40 uppercase tracking-widest">
-                    <span>滚轮缩放 / Zoom with Wheel</span>
-                    <span className="w-px h-3 bg-amber-900/20" />
-                    <span>拖拽移动 / Drag to Pan</span>
+                <div className="flex items-center gap-6 pointer-events-auto">
+                  <div className="hidden lg:flex items-center gap-3 text-[10px] text-emerald-100/30 uppercase tracking-widest bg-black/40 px-4 py-1.5 rounded-full backdrop-blur-sm border border-emerald-900/10">
+                    <span>滚轮缩放 / Zoom</span>
+                    <span className="w-px h-3 bg-emerald-900/10" />
+                    <span>拖拽移动 / Pan</span>
                   </div>
                   <button 
                     onClick={() => {
@@ -159,7 +169,7 @@ export const WorldMap = ({
                       mapScale.set(1);
                       setSelectedLocationId(null);
                     }}
-                    className="text-neutral-500 hover:text-neutral-100 transition-colors uppercase tracking-widest text-[10px] md:text-xs cursor-pointer p-2"
+                    className="bg-black/40 hover:bg-black/60 text-neutral-400 hover:text-neutral-100 transition-all uppercase tracking-widest text-[10px] md:text-xs cursor-pointer px-6 py-2 rounded-full border border-white/5 backdrop-blur-sm"
                   >
                     Close
                   </button>
@@ -169,7 +179,7 @@ export const WorldMap = ({
               {/* 地图交互区域 */}
               <div 
                 ref={mapRef}
-                className="flex-grow relative bg-[#d4a85a] border-2 border-amber-900/60 rounded-sm overflow-hidden shadow-[inset_0_0_80px_rgba(0,0,0,0.2)] cursor-grab active:cursor-grabbing"
+                className="flex-grow w-full h-full relative bg-[#1c120a] overflow-hidden cursor-grab active:cursor-grabbing"
                 onWheel={handleMapZoom}
                 style={{ 
                   perspective: '2000px',
@@ -180,10 +190,10 @@ export const WorldMap = ({
                 <motion.div 
                   drag
                   dragConstraints={{ 
-                    left: -1500, 
-                    right: 1500, 
-                    top: -1200, 
-                    bottom: 1200 
+                    left: -2000, 
+                    right: 2000, 
+                    top: -2000, 
+                    bottom: 2000 
                   }}
                   dragTransition={{ bounceStiffness: 200, bounceDamping: 30, power: 0.15 }}
                   dragElastic={0.02}
@@ -194,9 +204,9 @@ export const WorldMap = ({
                     rotateX: mapTilt,
                     perspective: mapPerspectiveOffset,
                     transformStyle: 'preserve-3d',
-                    transform: 'translateZ(0)' // 强制开启 GPU 加速
+                    transform: 'translateZ(0)' 
                   }}
-                  className="absolute inset-[-150%] origin-center will-change-transform bg-[#e3bc6a]"
+                  className="absolute inset-[-150%] origin-center will-change-transform bg-[#d4a85a]"
                 >
                   {/* 背景纹理：旧纸张效果 */}
                   <div className="absolute inset-0 pointer-events-none opacity-60 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/old-map.png')]" />
