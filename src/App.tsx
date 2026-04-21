@@ -877,6 +877,7 @@ export default function App() {
       </svg>
       {/* 全局背景纹理与阴影渐变 */}
       <div className="fixed inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-20 pointer-events-none" />
+      <div className="fixed inset-0 bg-[url('https://www.transparenttextures.com/patterns/parchment.png')] opacity-15 pointer-events-none mix-blend-overlay" />
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0)_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none" />
       
       {/* 动态粒子背景：渲染尘埃、雪花或萤火虫 */}

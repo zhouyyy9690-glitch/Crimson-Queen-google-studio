@@ -17,121 +17,119 @@ interface ChapterSelectModalProps {
 // --------------------------------------------------------------------------------
 // 章节星座图组件 (Chapter Constellation)
 // --------------------------------------------------------------------------------
-const ChapterConstellation = ({ chapter, history }: { chapter: any, history: string[] }) => {
+// --------------------------------------------------------------------------------
+// 章节星座图组件 (手绘风格，无动画)
+// --------------------------------------------------------------------------------
+const ChapterConstellation = ({ chapter, history }: { chapter: any; history: string[] }) => {
   if (!chapter.constellation) return null;
 
-  // 星座连线逻辑
+  // 星座连线逻辑 (固定连接顺序)
   const connections = [
     [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6]
   ];
 
-  // 节点坐标 (百分比) - 模拟一种天体轨迹
+  // 节点坐标 (百分比) - 模拟天体轨迹
   const coords = [
     { x: 20, y: 30 },
     { x: 35, y: 25 },
     { x: 50, y: 40 },
-    { x: 65, y: 20 }, // 4th star (Night)
+    { x: 65, y: 20 },
     { x: 80, y: 35 },
     { x: 70, y: 60 },
     { x: 85, y: 75 }
   ];
 
+  // 生成四角星路径 (中心点坐标，半径)
+  const getStarPath = (cx: number, cy: number, rOuter: number, rInner: number) => {
+    const points = [];
+    for (let i = 0; i < 8; i++) {
+      const angle = (i * 45) * Math.PI / 180;
+      const r = (i % 2 === 0) ? rOuter : rInner;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      points.push(`${x},${y}`);
+    }
+    return `M ${points.join(' L ')} Z`;
+  };
+
   return (
     <div className="absolute top-1/2 -right-4 md:right-4 -translate-y-1/2 w-32 md:w-48 h-64 md:h-80 pointer-events-none opacity-80 z-20">
       <svg className="w-full h-full overflow-visible">
-        <defs>
-          <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#fbbf24" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-        
-        {/* Lines */}
+        {/* 连线 */}
         {connections.map(([from, to], i) => {
-          const isFromLit = history.some(id => 
+          const isFromLit = history.some(id =>
             chapter.constellation[from].matchScenes.some((m: string) => id.includes(m))
           );
-          const isToLit = history.some(id => 
+          const isToLit = history.some(id =>
             chapter.constellation[to].matchScenes.some((m: string) => id.includes(m))
           );
-          
+          const isLineLit = isFromLit && isToLit;
+
           return (
-            <motion.line
+            <line
               key={`line-${i}`}
               x1={`${coords[from].x}%`}
               y1={`${coords[from].y}%`}
               x2={`${coords[to].x}%`}
               y2={`${coords[to].y}%`}
-              stroke="white"
-              strokeWidth="0.5"
-              strokeDasharray="4,4"
-              initial={{ opacity: 0.05 }}
-              animate={{ opacity: (isFromLit && isToLit) ? 0.25 : 0.05 }}
-              className="transition-opacity duration-1000"
+              stroke={isLineLit ? "#D4AF37" : "#4A3B30"}  // 淡金色 vs 灰色
+              strokeWidth="1"
+              strokeDasharray="3,3"
+              opacity={0.6}
             />
           );
         })}
 
-        {/* Nodes */}
+        {/* 星星节点 */}
         {chapter.constellation.map((node: any, i: number) => {
-          const isLit = history.some(id => 
+          const isLit = history.some(id =>
             node.matchScenes.some((match: string) => id.includes(match))
           );
           const pos = coords[i];
           const isMoon = node.id === 'night' || node.icon === 'moon';
+          const starColor = isLit ? "#D4AF37" : "#6B5B4B";
+          const centerX = `${pos.x}%`;
+          const centerY = `${pos.y}%`;
+          const size = isMoon ? 0 : 6; // 普通星星半径
 
           return (
-            <g key={node.id} className="cursor-default">
-              {/* Glow background */}
-              {isLit && (
-                <motion.circle
-                  cx={`${pos.x}%`}
-                  cy={`${pos.y}%`}
-                  r="8"
-                  fill="url(#starGlow)"
-                  animate={{ opacity: [0.1, 0.3, 0.1], scale: [0.8, 1.2, 0.8] }}
-                  transition={{ duration: 4, repeat: Infinity }}
-                />
-              )}
-              
-              <motion.circle
-                cx={`${pos.x}%`}
-                cy={`${pos.y}%`}
-                r={isLit ? (isMoon ? "0" : "3.5") : "1.5"}
-                fill={isLit ? "#fbbf24" : "#2a1b10"}
-                stroke={isLit ? "transparent" : "#4a3b30"}
-                strokeWidth="0.5"
-                initial={{ opacity: 0.3 }}
-                animate={isLit ? {
-                  opacity: 1,
-                  scale: [1, 1.1, 1],
-                } : { opacity: 0.3 }}
-                transition={{ duration: 3, repeat: Infinity }}
-              />
-
-              {isMoon && isLit ? (
-                <motion.text 
-                  x={`${pos.x}%`} 
-                  y={`${pos.y}%`} 
-                  textAnchor="middle" 
+            <g key={node.id}>
+              {isMoon ? (
+                // 月亮：直接使用文字符号，颜色根据点亮状态
+                <text
+                  x={centerX}
+                  y={centerY}
+                  textAnchor="middle"
                   dominantBaseline="middle"
-                  className="fill-amber-300 text-[16px]"
+                  fill={isLit ? "#D4AF37" : "#6B5B4B"}
+                  className="text-[16px] font-serif"
                   style={{ fontFamily: 'serif', transform: 'translate(0, -2px)' }}
-                  animate={{ opacity: [0.6, 1, 0.6], filter: ["blur(0px)", "blur(1px)", "blur(0px)"] }}
-                  transition={{ duration: 4, repeat: Infinity }}
                 >
                   ☾
-                </motion.text>
-              ) : null}
+                </text>
+              ) : (
+                // 手绘星星：绘制一个简单的四角星（星芒形状）
+                <g transform={`translate(${pos.x}%, ${pos.y}%)`}>
+                  <path
+                    d={getStarPath(0, 0, 8, 3)}
+                    fill={starColor}
+                    stroke={isLit ? "#D4AF37" : "#6B5B4B"}
+                    strokeWidth="0.5"
+                  />
+                </g>
+              )}
 
-              <text
-                x={`${pos.x}%`}
-                y={`${pos.y + 10}%`}
-                textAnchor="middle"
-                className={`fill-amber-100/40 text-[5px] md:text-[7px] tracking-[0.2em] font-chinese font-light pointer-events-none transition-opacity duration-500 ${isLit ? 'opacity-100' : 'opacity-0'}`}
-              >
-                {node.label}
-              </text>
+              {/* 标签：只有点亮才显示 */}
+              {isLit && (
+                <text
+                  x={`${pos.x}%`}
+                  y={`${pos.y + 12}%`}
+                  textAnchor="middle"
+                  className="fill-amber-100/70 text-[5px] md:text-[7px] tracking-[0.2em] font-chinese font-light pointer-events-none"
+                >
+                  {node.label}
+                </text>
+              )}
             </g>
           );
         })}
