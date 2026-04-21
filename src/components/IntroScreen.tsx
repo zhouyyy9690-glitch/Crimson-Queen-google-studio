@@ -1,27 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
-/**
- * 华丽开场动画组件 Props 接口
- */
 interface IntroScreenProps {
-  onComplete: () => void; // 动画播放完成或跳过时的回调
+  onComplete: () => void;
 }
 
-/**
- * IntroScreen 组件 - 哥特风开场动画 (两段式)
- */
 export const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
   const [stage, setStage] = useState<'title' | 'tips'>('title');
+  const [titleFinished, setTitleFinished] = useState(false);
 
   useEffect(() => {
     if (stage === 'title') {
-      // 第一阶段：标题展示 (浮现 -> 停留 -> 隐没)
-      // 总时长延长至 10 秒以体现古老沉重感
-      const timer = setTimeout(() => {
-        setStage('tips');
-      }, 10000); 
-      return () => clearTimeout(timer);
+      // 标题动画总时长（浮现+停留+隐没）约 8 秒
+      const titleTimer = setTimeout(() => {
+        setTitleFinished(true);
+        // 标题完全隐没后再等待 5 秒切换到注意事项
+        const waitTimer = setTimeout(() => {
+          setStage('tips');
+        }, 5000);
+        return () => clearTimeout(waitTimer);
+      }, 8000);
+      return () => clearTimeout(titleTimer);
     }
   }, [stage]);
 
@@ -32,8 +31,13 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
       transition={{ duration: 1.5 }}
       className="fixed inset-0 z-[5000] bg-black flex flex-col items-center justify-center text-center overflow-hidden cursor-none"
       onClick={() => {
-        if (stage === 'title') setStage('tips');
-        else onComplete();
+        if (stage === 'title') {
+          // 点击跳过标题阶段，直接进入等待5秒后的注意事项
+          setTitleFinished(true);
+          setTimeout(() => setStage('tips'), 5000);
+        } else {
+          onComplete();
+        }
       }}
     >
       <AnimatePresence mode="wait">
@@ -43,44 +47,42 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 3 }}
+            transition={{ duration: 0.5 }}
             className="flex flex-col items-center justify-center w-full h-full bg-black relative"
           >
-            {/* 标题容器 */}
-            <div className="relative mb-8 z-10">
+            <div className="relative z-10">
               {/* 主标题 */}
-              <div className="relative inline-block">
-                <motion.h1 
-                  className="font-gothic text-5xl md:text-7xl lg:text-8xl font-black tracking-widest uppercase text-[#5a0a0a]"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ 
-                    opacity: [0, 1, 1, 0.2, 0],
-                    scale: [0.95, 1, 1.02, 1.02, 1.02],
-                    filter: ["brightness(0) blur(15px)", "brightness(1) blur(0px)", "brightness(1.2)", "brightness(0.5) blur(8px)", "brightness(0) blur(30px)"]
-                  }}
-                  transition={{ 
-                    duration: 9,
-                    times: [0, 0.3, 0.7, 0.9, 1],
-                    ease: "easeInOut"
-                  }}
-                >
-                  The Crimson Queen
-                </motion.h1>
-              </div>
-
-              {/* 中文标题 */}
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
+              <motion.h1 
+                className="font-gothic text-5xl md:text-7xl lg:text-8xl font-black tracking-widest uppercase text-[#5a0a0a]"
+                initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
                 animate={{ 
                   opacity: [0, 1, 1, 0],
-                  y: [10, 0, -5, -15]
+                  scale: [0.9, 1, 1.05, 1.05],
+                  filter: ["blur(10px)", "blur(0px)", "blur(0px)", "blur(20px)"]
                 }}
                 transition={{ 
                   duration: 8,
-                  times: [0, 0.3, 0.8, 1],
-                  delay: 1.5
+                  times: [0, 0.25, 0.75, 1],
+                  ease: "easeInOut"
                 }}
+              >
+                The Crimson Queen
+              </motion.h1>
+
+              {/* 中文标题（与主标题同步动画） */}
+              <motion.div 
                 className="font-gothic text-base md:text-xl tracking-[0.6em] text-[#8a6e4b] mt-8"
+                initial={{ opacity: 0, y: 20, filter: "blur(5px)" }}
+                animate={{ 
+                  opacity: [0, 1, 1, 0],
+                  y: [20, 0, -5, -10],
+                  filter: ["blur(5px)", "blur(0px)", "blur(0px)", "blur(15px)"]
+                }}
+                transition={{ 
+                  duration: 8,
+                  times: [0, 0.3, 0.7, 1],
+                  ease: "easeInOut"
+                }}
               >
                 ✦ 绛红女王 ✦
               </motion.div>
@@ -93,29 +95,28 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onComplete }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1.5 }}
-            className="flex flex-col items-center justify-center w-full h-full"
+            className="flex flex-col items-center justify-center w-full h-full bg-black"
           >
-            {/* 渐变背景底层 */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#0a0a0a_0%,#000000_100%)] opacity-60" />
-
-            {/* 注意事项容器 */}
-            <div className="z-10 px-8 py-4 max-w-lg">
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 1.5 }}
-                className="bg-black/60 backdrop-blur-sm border-l-4 border-[#8b0000] px-8 py-6 rounded-r-lg text-[#bbb] text-sm md:text-base leading-loose font-serif text-left shadow-2xl"
+            {/* 平铺电影风格提示文字 */}
+            <div className="max-w-md px-8 text-center">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1.2, ease: "easeOut" }}
               >
-                <p className="mb-3 text-amber-700/80 font-display tracking-widest text-xs">ADVISORY</p>
-                <p className="mb-2 text-white/90">※ 本故事纯属虚构 ※</p>
-                <p>涉及政治、情感与成人内容，请斟酌体验。</p>
-                <div className="mt-8 flex items-center gap-3 opacity-30">
-                  <div className="h-px flex-grow bg-gradient-to-r from-transparent to-neutral-700" />
-                  <span className="text-[10px] uppercase font-mono tracking-tighter">Initializing Chronicle</span>
+                <p className="text-white/70 text-sm md:text-base leading-relaxed font-serif tracking-wide mb-4">
+                  本故事纯属虚构
+                </p>
+                <p className="text-white/50 text-xs md:text-sm leading-relaxed font-serif tracking-wide">
+                  涉及政治、情感与成人内容，请斟酌体验。
+                </p>
+                <div className="mt-12 flex justify-center gap-2 text-[10px] text-white/30 font-mono tracking-widest">
+                  <span>✦</span>
+                  <span>INITIALIZING CHRONICLE</span>
                   <motion.span 
                     animate={{ opacity: [0, 1, 0] }}
-                    transition={{ repeat: Infinity, duration: 1 }}
-                    className="w-1.5 h-1.5 rounded-full bg-amber-600"
+                    transition={{ repeat: Infinity, duration: 1.2 }}
+                    className="w-1.5 h-1.5 rounded-full bg-amber-600 inline-block"
                   />
                 </div>
               </motion.div>
