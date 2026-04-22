@@ -211,7 +211,7 @@ export const act2Scenes: Record<string, Scene> = {
       { text: '好在昆提斯·德罗斯特说完后，便回到他原本的位置。\n你松了一口气，心却不由自主地为刚刚那句话剧烈跳动起来。' }
     ],
     choices: [
-      { text: '继续', nextSceneId: 'F61-OuterCityLife' }
+      { text: '继续', nextSceneId: 'F55-FarewellValley' }
     ]
   },
 
@@ -228,7 +228,9 @@ export const act2Scenes: Record<string, Scene> = {
       { text: '梅莉桑德·瓦列经过你身边时，轻声对你说，“希望我们能有下一次见面。”' },
       { text: '你感到自己的眼睛有一点发热。' }
     ],
-    choices: []
+    choices: [
+      { text: '再见，瓦列们.......', nextSceneId: 'F61-Onlyyourself' }
+    ]
   },
 
   'F56-HammondTopic': {
