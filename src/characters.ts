@@ -19,16 +19,17 @@ export const characters: Character[] = [
       }
     ],
     unlockedAt: 'F2-Bishop',
-    iconType: 'fox',
+    iconType: 'moon',
     path: 'fox',
     matchNames: ['凯瑟琳'],
-    positionHint: { x: 50, y: 55 },
+    positionHint: { x: 50, y: 45 },
     relations: [
       { to: 'laughton', type: 'kin', label: '父王' },
       { to: 'isabella', type: 'kin', label: '母后' },
       { to: 'finn', type: 'friend', label: '挚友' },
       { to: 'george', type: 'enemy', label: '权臣 / 争夺者' },
-      { to: 'valantir', type: 'vassal', label: '宗教导师' }
+      { to: 'valantir', type: 'vassal', label: '宗教导师' },
+      { to: 'yseldis', type: 'kin', label: '姑姑' }
     ]
   },
   // Fox Path Characters
@@ -48,7 +49,7 @@ export const characters: Character[] = [
     unlockedAt: 'DelayedePrincess',
     iconType: 'sword',
     path: 'fox',
-    positionHint: { x: 25, y: 50 },
+    positionHint: { x: 35, y: 45 },
     relations: [
       { to: 'catherine', type: 'friend', label: '守护者' }
     ]
@@ -73,7 +74,7 @@ export const characters: Character[] = [
     unlockedAt: ['HerMaiesty', 'd1-deer', 'BlackHawksRemarriage', 'BlackHawksNewMarriage'],
     iconType: 'eagle',
     path: 'all',
-    positionHint: { x: 75, y: 50 },
+    positionHint: { x: 65, y: 45 },
     relations: [
       { to: 'catherine', type: 'enemy', label: '摄政敌人' },
       { to: 'laughton', type: 'vassal', label: '前御前首相' },
@@ -95,7 +96,7 @@ export const characters: Character[] = [
     unlockedAt: ['fox', 'Yourdecision'],
     iconType: 'ring',
     path: 'fox',
-    positionHint: { x: 50, y: 85 }
+    positionHint: { x: 50, y: 80 }
   },
   {
     id: 'margaret',
@@ -112,7 +113,8 @@ export const characters: Character[] = [
     ],
     unlockedAt: ['fox', 'Yourdecision'],
     iconType: 'user',
-    path: 'fox'
+    path: 'fox',
+    positionHint: { x: 58, y: 58 }
   },
   {
     id: 'septimus',
@@ -122,7 +124,8 @@ export const characters: Character[] = [
     description: '在溪木堡陪伴凯瑟琳长大的学士，胸前挂着象征学识的六环。他冷静而睿智。',
     unlockedAt: ['fox', 'Yourdecision'],
     iconType: 'sword',
-    path: 'fox'
+    path: 'fox',
+    positionHint: { x: 42, y: 58 }
   },
   {
     id: 'aldric',
@@ -133,7 +136,8 @@ export const characters: Character[] = [
     unlockedAt: ['fox', 'Yourdecision'],
     iconType: 'user',
     path: 'fox',
-    matchNames: ['奥德里克']
+    matchNames: ['奥德里克'],
+    positionHint: { x: 38, y: 72 }
   },
   {
     id: 'knight',
@@ -141,9 +145,19 @@ export const characters: Character[] = [
     nameEn: 'The Great Knight',
     title: '守护骑士',
     description: '从凯瑟琳有记忆起就守护在她身边的老骑士。他沉默寡言，但他的剑始终为保护公主而存在。',
+    updates: [
+      {
+        atScene: 'F54-ArchbishopWords',
+        name: '约翰·布莱克',
+        nameEn: 'Sir John Black',
+        title: '守护骑士 / 约翰·布莱克爵士',
+        description: '大主教昆提斯·德罗斯特揭示了他的真实姓名：约翰·布莱克。他曾是王国的授勋骑士，却选择隐姓埋名守护在公主身边。'
+      }
+    ],
     unlockedAt: ['fox', 'Yourdecision'],
     iconType: 'sword',
-    path: 'fox'
+    path: 'fox',
+    positionHint: { x: 30, y: 65 }
   },
   {
     id: 'raymond',
@@ -153,7 +167,97 @@ export const characters: Character[] = [
     description: '翠谷地区的领主，瓦列家族的首领。他在瓦兰提尔·诺恩的安排下负责护送凯瑟琳回城。',
     unlockedAt: 'F4-ValantirNohnboesdowntoyou',
     iconType: 'sword',
-    path: 'fox'
+    path: 'fox',
+    positionHint: { x: 18, y: 75 },
+    relations: [
+      { to: 'melisande', type: 'kin', label: '长女' },
+      { to: 'meliora', type: 'kin', label: '次女' },
+      { to: 'melina', type: 'kin', label: '幼女' }
+    ]
+  },
+  {
+    id: 'melisande',
+    name: '梅莉桑德·瓦列',
+    nameEn: 'Melisande Valais',
+    title: '瓦列家之长女',
+    description: '雷蒙德·瓦列的长女，十八岁，性格稳重而聪明。在护送女王回城的路上，她是凯瑟琳的重要良伴。',
+    unlockedAt: 'F48-suburb',
+    iconType: 'heart',
+    path: 'fox',
+    matchNames: ['梅莉桑德'],
+    positionHint: { x: 10, y: 85 }
+  },
+  {
+    id: 'meliora',
+    name: '梅莉奥拉·瓦列',
+    nameEn: 'Meliora Valais',
+    title: '瓦列家之次女',
+    description: '雷蒙德·瓦列的次女，十五岁，活泼好动，对王城的传闻非常感兴趣。',
+    unlockedAt: 'F48-suburb',
+    iconType: 'heart',
+    path: 'fox',
+    matchNames: ['梅莉奥拉'],
+    positionHint: { x: 20, y: 85 }
+  },
+  {
+    id: 'melina',
+    name: '梅莉娜·瓦列',
+    nameEn: 'Melina Valais',
+    title: '瓦列家之幼女',
+    description: '雷蒙德·瓦列的幼女，十二岁，天真可爱。她总是缠着凯瑟琳讲故事。',
+    unlockedAt: 'F48-suburb',
+    iconType: 'heart',
+    path: 'fox',
+    matchNames: ['梅莉娜'],
+    positionHint: { x: 15, y: 92 }
+  },
+  {
+    id: 'roderick',
+    name: '罗德里克·索恩',
+    nameEn: 'Roderick Thorne',
+    title: '红袍卫士卫队长',
+    description: '冷峻而威严的骑士，穿着象征权力的红袍。他是王城的守卫者，对女王持有一种复杂的忠诚。',
+    unlockedAt: 'F53-1-Welcome',
+    iconType: 'sword',
+    path: 'all',
+    matchNames: ['罗德里克'],
+    positionHint: { x: 65, y: 72 }
+  },
+  {
+    id: 'yseldis',
+    name: '伊瑟尔迪丝·赫西',
+    nameEn: 'Yseldis Hersey',
+    title: '赫西家的长公主',
+    description: '凯瑟琳的姑姑，曾经的征服王国公主。在经历了一段不幸的婚姻后，她隐居在慈悲修道院中，成为了那里的院长。',
+    unlockedAt: 'F50-MonasteryView',
+    iconType: 'heart',
+    path: 'all',
+    matchNames: ['伊瑟尔迪丝'],
+    positionHint: { x: 75, y: 15 }
+  },
+  {
+    id: 'percival',
+    name: '珀西瓦尔·莱昂',
+    nameEn: 'Percival Leon',
+    title: '黄金骑士',
+    description: '一个充满传奇色彩的骑士，被称为“黄金骑士”。他多年前离开了征服王国，留下了一段关于他与伊瑟尔迪丝公主的未了情缘。',
+    unlockedAt: 'F60-GoldenKnightRumor',
+    iconType: 'sword',
+    path: 'all',
+    matchNames: ['珀西瓦尔'],
+    positionHint: { x: 88, y: 15 }
+  },
+  {
+    id: 'jasper',
+    name: '贾斯珀·马雷',
+    nameEn: 'Jasper Mare',
+    title: '红袍卫士 / 米瑞斯之子',
+    description: '米瑞斯侯爵的长子，也是劳顿国王曾经的红袍卫士。他因为与父亲的矛盾而选择留在王城。',
+    unlockedAt: 'F57-MaresAndMireis',
+    iconType: 'sword',
+    path: 'all',
+    matchNames: ['贾斯珀'],
+    positionHint: { x: 75, y: 80 }
   },
   {
     id: 'edgar',
@@ -163,7 +267,8 @@ export const characters: Character[] = [
     description: '斯特莱家族的成员，南境领主的次子。他与雷蒙德·瓦列一同护送女王。',
     unlockedAt: 'F4-ValantirNohnboesdowntoyou',
     iconType: 'sword',
-    path: 'fox'
+    path: 'fox',
+    positionHint: { x: 25, y: 75 }
   },
   {
     id: 'stray',
@@ -173,7 +278,8 @@ export const characters: Character[] = [
     description: '来自南方的领主，热爱美酒与夏日的果实。在红廷的盛宴中献上南方的佳酿。他是乔治·哈蒙德的盟友。',
     unlockedAt: 'HerMaiesty',
     iconType: 'tiger',
-    path: 'fox'
+    path: 'fox',
+    positionHint: { x: 88, y: 55 }
   },
   {
     id: 'durin',
@@ -183,7 +289,8 @@ export const characters: Character[] = [
     description: '来自寒冷北境的领主，为女王带来了王统的剑盔。他沉默寡言，忠于王室传统，手握王国的北方边境。',
     unlockedAt: 'HerMaiesty',
     iconType: 'bear',
-    path: 'fox'
+    path: 'fox',
+    positionHint: { x: 50, y: 5 }
   },
   {
     id: 'dean',
@@ -193,13 +300,13 @@ export const characters: Character[] = [
     description: '乔治·哈蒙德的长子。在某些命运的分支中，他成为了女王的丈夫。',
     unlockedAt: ['Caesar', 'Thedespisedeldestson', 'd2-1-DeanHammond'],
     iconType: 'ring',
-    path: 'all'
+    path: 'all',
+    positionHint: { x: 85, y: 45 }
   },
-  // Deer Path Characters
   {
     id: 'dami',
     name: '达里安·德·雷斯多',
-    nameEn: 'Darian de Lesdos',
+    nameEn: 'Darian de Resdo',
     title: '雷斯多家的幼子',
     description: '维克托·德·雷斯多伯爵最小的孩子。体弱多病，却拥有至纯的诗艺与灵性。',
     updates: [
@@ -211,12 +318,13 @@ export const characters: Character[] = [
     ],
     unlockedAt: 'd2-CarriageTalk',
     iconType: 'user',
-    path: 'deer'
+    path: 'deer',
+    positionHint: { x: 15, y: 25 }
   },
   {
     id: 'victor',
     name: '维克托·德·雷斯多',
-    nameEn: 'Victor de Lesdos',
+    nameEn: 'Victor de Resdo',
     title: '雷斯多伯爵',
     description: '达里安的父亲，一位严谨而关爱孩子的领主。他效忠于南境领主斯特莱家族。',
     updates: [
@@ -227,22 +335,24 @@ export const characters: Character[] = [
     ],
     unlockedAt: 'd1-deer',
     iconType: 'sword',
-    path: 'deer'
+    path: 'deer',
+    positionHint: { x: 5, y: 15 }
   },
   {
     id: 'franklin',
     name: '富兰克林·德·雷斯多',
-    nameEn: 'Franklin de Lesdos',
+    nameEn: 'Franklin de Resdo',
     title: '雷斯多家的二哥',
     description: '达里安的二哥，棕发绿眼。比起严肃的家事，他似乎更热衷于追求有风情的女人。',
     unlockedAt: 'd1-deer',
     iconType: 'user',
-    path: 'deer'
+    path: 'deer',
+    positionHint: { x: 5, y: 25 }
   },
   {
     id: 'felix',
     name: '菲利克斯·德·雷斯多',
-    nameEn: 'Felix de Lesdos',
+    nameEn: 'Felix de Resdo',
     title: '雷斯多家的三哥',
     description: '达里安的三哥，黑发蓝眼。看似不着调，实则是家族中最聪明的人。他被称为“风流的菲力”。',
     updates: [
@@ -253,27 +363,30 @@ export const characters: Character[] = [
     ],
     unlockedAt: ['d1-deer', 'Therunawayprodigalson'],
     iconType: 'user',
-    path: 'all'
+    path: 'all',
+    positionHint: { x: 5, y: 35 }
   },
   {
     id: 'etienne',
     name: '埃蒂安·德·雷斯多',
-    nameEn: 'Etienne de Lesdos',
+    nameEn: 'Etienne de Resdo',
     title: '雷斯多家的长子',
     description: '达里安的大哥，家族未来的继承人。他沉稳温和，承担着家族的重任。',
     unlockedAt: 'd1-deer',
     iconType: 'sword',
-    path: 'deer'
+    path: 'deer',
+    positionHint: { x: 5, y: 45 }
   },
   {
     id: 'giovanna',
-    name: '吉尔瓦娜·德·雷斯多',
-    nameEn: 'Giovanna de Lesdos',
+    name: '吉奥瓦娜·德·雷斯多',
+    nameEn: 'Giovanna de Resdo',
     title: '雷斯多伯爵夫人',
     description: '达里安的母亲，温柔而坚韧。她是家族的情感纽带，始终默默支持着丈夫和孩子们。',
     unlockedAt: 'd1-deer',
     iconType: 'user',
-    path: 'deer'
+    path: 'deer',
+    positionHint: { x: 5, y: 5 }
   },
   {
     id: 'dray',
@@ -283,7 +396,8 @@ export const characters: Character[] = [
     description: '头发花白、总是笑眯眯的老人。教导达里安历史、天文和草药学。目前在王城的贤者堡。',
     unlockedAt: 'd3-1-ScholarNeed',
     iconType: 'user',
-    path: 'deer'
+    path: 'deer',
+    positionHint: { x: 10, y: 15 }
   },
   {
     id: 'anne',
@@ -293,7 +407,8 @@ export const characters: Character[] = [
     description: '坐在织机前的神秘女子，声称能看见命运的经纬。',
     unlockedAt: 'TheWeavingWomanandtheWhiteQueen',
     iconType: 'ring',
-    path: 'all'
+    path: 'all',
+    positionHint: { x: 95, y: 50 }
   },
   {
     id: 'yugenia',
@@ -301,9 +416,10 @@ export const characters: Character[] = [
     nameEn: 'Eugenia Hersey',
     title: '赫西家的女儿',
     description: '眼神坚定的少女，认为赫西的名字不应只代表过去。',
-    unlockedAt: 'Lesdosdaughter',
+    unlockedAt: 'Resdodaughter',
     iconType: 'fox',
-    path: 'all'
+    path: 'all',
+    positionHint: { x: 95, y: 60 }
   },
   {
     id: 'droste',
@@ -313,7 +429,8 @@ export const characters: Character[] = [
     description: '征服王国七神教会的最高领袖，驻扎在王城的凯斯大圣堂。他是一位权倾朝野的宗教领袖，对王国的政治局势有着深远的影响。',
     iconType: 'scroll',
     path: 'common',
-    unlockedAt: 'F25-ScholarDeepTalk'
+    unlockedAt: 'F25-ScholarDeepTalk',
+    positionHint: { x: 50, y: 92 }
   },
   {
     id: 'jeffrey',
@@ -323,7 +440,8 @@ export const characters: Character[] = [
     description: '服务于瓦列家族的学士，博学多才。他在瓦兰提尔·诺恩抵达翠谷之前就通过某种手段获知了消息。',
     iconType: 'scroll',
     path: 'fox',
-    unlockedAt: 'F9-1-wallshaveears'
+    unlockedAt: 'F9-1-wallshaveears',
+    positionHint: { x: 5, y: 80 }
   },
   {
     id: 'eileen',
@@ -333,7 +451,8 @@ export const characters: Character[] = [
     description: '芬因·里德的母亲，一位勤劳善良的农家妇女。在丈夫去世后，她独自抚养芬因长大。',
     iconType: 'heart',
     path: 'fox',
-    unlockedAt: 'F41-LeaveWithFain'
+    unlockedAt: 'F41-LeaveWithFain',
+    positionHint: { x: 35, y: 35 }
   },
   {
     id: 'laughton',

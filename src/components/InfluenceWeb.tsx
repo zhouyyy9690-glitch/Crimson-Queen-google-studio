@@ -97,14 +97,16 @@ export const InfluenceWeb: React.FC<InfluenceWebProps> = ({
       <motion.div 
         className="w-full h-full cursor-grab active:cursor-grabbing"
         drag
-        dragConstraints={{ left: -500, right: 500, top: -500, bottom: 500 }}
+        dragConstraints={{ left: -1000, right: 1000, top: -1000, bottom: 1000 }}
         dragElastic={0.1}
         dragMomentum={true}
+        initial={{ x: 0, y: 0 }}
       >
         <svg 
           viewBox="0 0 1000 1000" 
           className="w-full h-full overflow-visible"
           style={{ width: '100%', height: '100%' }}
+          preserveAspectRatio="xMidYMid meet"
         >
           <defs>
             <filter id="starGlow" x="-50%" y="-50%" width="200%" height="200%">
@@ -126,9 +128,9 @@ export const InfluenceWeb: React.FC<InfluenceWebProps> = ({
             const isEnemy = link.type === 'enemy';
             const isKin = link.type === 'kin' || link.type === 'spouse';
             const strokeColor = isEnemy ? "#8b0000" : "#D4AF37";
-            const opacity = isEnemy ? 0.3 : 0.2;
-            const strokeWidth = isKin ? 3 : 1.5; // 在 1000px 坐标系下稍微加粗
-            const strokeDash = isEnemy ? "4,4" : "15,8";
+            const opacity = isEnemy ? 0.35 : 0.25;
+            const strokeWidth = isKin ? 2.5 : 1; 
+            const strokeDash = isEnemy ? "8,8" : "15,8";
 
             return (
               <motion.line
@@ -143,6 +145,7 @@ export const InfluenceWeb: React.FC<InfluenceWebProps> = ({
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: opacity }}
                 transition={{ duration: 1.5, delay: i * 0.05 }}
+                style={{ mixBlendMode: 'screen' }}
               />
             );
           })}
@@ -158,8 +161,8 @@ export const InfluenceWeb: React.FC<InfluenceWebProps> = ({
                 key={node.id}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                whileHover={{ scale: 1.2 }}
-                onPointerDown={(e) => e.stopPropagation()} // 防止触发拖拽开始
+                whileHover={{ scale: 1.15 }}
+                onPointerDown={(e) => e.stopPropagation()} 
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedCharacterId(node.id);
@@ -170,7 +173,7 @@ export const InfluenceWeb: React.FC<InfluenceWebProps> = ({
                 <circle
                   cx={pos.x * 10}
                   cy={pos.y * 10}
-                  r={isSelected ? 60 : 35}
+                  r={isSelected ? 50 : 30}
                   fill="url(#nodeGlow)"
                   className="pointer-events-none"
                 />
@@ -178,36 +181,41 @@ export const InfluenceWeb: React.FC<InfluenceWebProps> = ({
                 {/* 星星形状 */}
                 <g transform={`translate(${pos.x * 10}, ${pos.y * 10})`}>
                   <motion.path
-                    d={getStarPath(0, 0, isMain ? 25 : 18, isMain ? 10 : 7)}
+                    d={getStarPath(0, 0, isMain ? 20 : 14, isMain ? 8 : 6)}
                     fill={isSelected ? "#D4AF37" : "#8b5e34"}
                     stroke="#D4AF37"
-                    strokeWidth="1"
+                    strokeWidth="0.8"
                     animate={isSelected ? {
-                      filter: "drop-shadow(0 0 10px #D4AF37)",
-                      scale: [1, 1.1, 1]
+                      filter: "drop-shadow(0 0 8px #D4AF37)",
+                      scale: [1, 1.15, 1]
                     } : {}}
-                    transition={{ repeat: Infinity, duration: 2 }}
+                    transition={{ repeat: Infinity, duration: 2.5 }}
                   />
                 </g>
 
-                {/* 姓名标签 */}
+                {/* 姓名标签：位置根据节点位置微调以减少重叠 */}
                 <text
                   x={pos.x * 10}
-                  y={pos.y * 10 + 45}
+                  y={pos.y * 10 + (pos.y > 80 ? -25 : 30)} // 靠底部的名字往上放
                   textAnchor="middle"
-                  className={`fill-amber-100/80 text-[18px] font-display tracking-[0.2em] uppercase pointer-events-none transition-all duration-300 ${isSelected ? 'fill-amber-500 font-bold' : ''}`}
-                  style={{ filter: isSelected ? 'drop-shadow(0 0 4px black)' : 'none' }}
+                  className={`fill-amber-100/90 text-[14px] font-display tracking-[0.25em] uppercase pointer-events-none transition-all duration-300 ${isSelected ? 'fill-amber-400 font-bold scale-110' : ''}`}
+                  style={{ 
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))',
+                    paintOrder: 'stroke',
+                    stroke: 'black',
+                    strokeWidth: isSelected ? '1px' : '0.5px'
+                  }}
                 >
                   {node.name}
                 </text>
                 
-                {/* 英文标识 */}
-                {isSelected && (
+                {/* 英文标识 (仅选中或主角色显示，缩小字体) */}
+                {(isSelected || isMain) && (
                   <text
                     x={pos.x * 10}
-                    y={pos.y * 10 - 35}
+                    y={pos.y * 10 + (pos.y > 80 ? -40 : 45)}
                     textAnchor="middle"
-                    className="fill-amber-900/50 text-[10px] uppercase tracking-widest font-serif pointer-events-none shadow-sm"
+                    className="fill-amber-700/60 text-[8px] uppercase tracking-[0.2em] font-serif pointer-events-none"
                   >
                     {node.nameEn}
                   </text>

@@ -59,6 +59,8 @@ export interface CharacterUpdate {
   atScene: string;
   description: string;
   title?: string;
+  name?: string;
+  nameEn?: string;
 }
 
 // 角色定义接口：用于在“人物志”中显示
@@ -70,7 +72,7 @@ export interface Character {
   description: string;    // 基础背景描述
   updates?: CharacterUpdate[]; // 随着剧情推进而解锁的额外描述
   unlockedAt: string | string[]; // 解锁该角色的场景 ID
-  iconType: 'fox' | 'sword' | 'eagle' | 'bear' | 'tiger' | 'ring' | 'user' | 'scroll' | 'shield' | 'heart'; // 显示的图标类型
+  iconType: 'fox' | 'sword' | 'eagle' | 'bear' | 'tiger' | 'ring' | 'user' | 'scroll' | 'shield' | 'heart' | 'moon'; // 显示的图标类型
   path?: 'fox' | 'deer' | 'eagle' | 'all' | 'common'; // 所属剧情路径
   matchNames?: string[];  // 剧情文本中用于自动高亮的匹配词
   

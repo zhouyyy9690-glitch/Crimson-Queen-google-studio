@@ -11,8 +11,8 @@ export const spindleAct1Scenes: Record<string, Scene> = {
     choices: [
       { text: '安妮·朗珀蕾（Anne Langperley）', nextSceneId: 'start' },
       { text: '迪恩·哈蒙德（Dean Hammond）', nextSceneId: 'start' },
-      { text: '尤金妮亚·赫西（Yugenia Hessie）', nextSceneId: "start" },
-      { text: '菲利克斯·德·雷斯多（Felix de Lesdo）', nextSceneId: 'start' }
+      { text: '尤金妮亚·赫西（Eugenia Hessie）', nextSceneId: "start" },
+      { text: '菲利克斯·德·雷斯多（Felix de Resdo）', nextSceneId: 'start' }
     ]
   },
 };
@@ -20,6 +20,6 @@ export const spindleAct1Scenes: Record<string, Scene> = {
 
 //迪恩 ：Thedespisedeldestson
 
-//尤金妮亚 ：Lesdo'sdaughter
+//尤金妮亚 ：Resdodaughter
 
 //菲利克斯：Therunawayprodigalson

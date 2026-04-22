@@ -1,5 +1,5 @@
-import { act1Scenes } from './act1';
-import { act2Scenes } from './act2/act2';
+import { act1Scenes } from './chapter1:绿野王女';
+import { act2Scenes } from './chapter2：新的女王';
 
 export const foxScenes = {
   ...act1Scenes,

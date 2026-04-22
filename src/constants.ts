@@ -84,8 +84,8 @@ export const CHAPTERS_CONFIG = [
   },
   {
     id: 'act2',
-    roadId: 'spindle',
-    number: 'PROLOGVS',
+    roadId: 'fox',
+    number: 'CAPVT I',
     title: '新的女王',
     subtitle: 'REGINA NOVA',
     description: '阔别十四载，重回王城。冠冕之下，是权谋的暗流与注定孤寂的王座。',
@@ -93,17 +93,25 @@ export const CHAPTERS_CONFIG = [
     color: 'amber',
     startSceneId: 'Act2ChapterSplash',
     constellation: [
-      { id: 'coronation', label: '加冕', matchScenes: ['HerMaiesty'], icon: 'star' },
-      { id: 'banquet', label: '晚宴', matchScenes: ['HerMaiesty'], icon: 'star' },
-      { id: 'proposal', label: '提议', matchScenes: ['newlymarriedgirl'], icon: 'star' },
-      { id: 'bargain', label: '交易', matchScenes: ['newlymarriedgirl'], icon: 'star' },
-      { id: 'contract', label: '契约', matchScenes: ['newlymarriedgirl'], icon: 'star' },
-      { id: 'branch', label: '隐藏分支', matchScenes: ['George', 'Caesar'], icon: 'star' },
-      { id: 'continue', label: '继续标志', matchScenes: ['Act2Next'], icon: 'star' }
+      { id: 'suburb', label: '近郊', matchScenes: ['F48-suburb'], icon: 'star' },
+      { id: 'ferry', label: '渡鸦', matchScenes: ['F49-ThreeRiddlesFerry'], icon: 'star' },
+      { id: 'monastery', label: '姑母', matchScenes: ['F50-MonasteryView'], icon: 'star' },
+      { id: 'welcome', label: '欢迎', matchScenes: ['F53-1-Welcome', 'F54-ArchbishopWords'], icon: 'star' },
+      { id: 'farewell', label: '别离', matchScenes: ['F55-FarewellValley'], icon: 'star' }
     ],
     mapFocus: { x: 50, y: 150, scale: 2.2 }, // Capital focus
     regionLabels: ['中央河间地 · Riverlands'],
-    highlightLocations: ['kase_city', 'holy_spring', 'sages_keep']
+    highlightLocations: [
+      'kase_city', 
+      'kase_suburb', 
+      'three_riddles_ferry', 
+      'mercy_monastery', 
+      'storra_sanctuary', 
+      'velis_capital', 
+      'mireis', 
+      'reg_north', 
+      'holy_spring'
+    ]
   },
   {
     id: 'act1-deer',

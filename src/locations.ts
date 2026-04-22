@@ -8,7 +8,7 @@ export const locations: Location[] = [
     id: 'reg_north',
     name: '北境 · The North',
     faction: '阿尔摩恩家族 (House Almoen)',
-    description: '征服王国的北方边境，由北境大公爵暨全境守护者阿尔摩恩家族统治。这里地形险峻，多高山与高原，气候寒冷。',
+    description: '征服王国的北方边境，由北境大公爵暨全境守护者阿尔摩恩家族统治。老熊贝奥恩逝世后，现由其子杜林执掌。',
     x: 50,
     y: 15,
     path: 'all',
@@ -82,6 +82,17 @@ export const locations: Location[] = [
     matchNames: ['王城', '凯斯']
   },
   {
+    id: 'kase_suburb',
+    name: '王城近郊',
+    faction: '赫西王室',
+    description: '王城凯斯西侧的广阔区域，分布着重要的宗教建筑与先王合墓。',
+    x: 48,
+    y: 41,
+    path: 'all',
+    region: 'Central',
+    matchNames: ['近郊', '王城近郊']
+  },
+  {
     id: 'holy_spring',
     name: '凯斯大圣堂',
     faction: '七神教会',
@@ -92,6 +103,39 @@ export const locations: Location[] = [
     path: 'all',
     region: 'Central',
     matchNames: ['凯斯大教堂', '大圣堂']
+  },
+  {
+    id: 'three_riddles_ferry',
+    name: '三谜渡',
+    faction: '赫西王室',
+    description: '七河集汇之地，古称河间地。这里是建国者科马克·赫西的终结之地，也是他那奇特渡鸦巢穴坟墓的所在地。',
+    x: 48,
+    y: 38,
+    path: 'all',
+    region: 'Central',
+    matchNames: ['三谜渡']
+  },
+  {
+    id: 'mercy_monastery',
+    name: '慈悲修道院',
+    faction: '七神教会',
+    description: '位于王城近郊的纯白建筑，修士与修女的居所。凯瑟琳的姑母伊瑟尔迪丝公主隐居于此。',
+    x: 47,
+    y: 39,
+    path: 'all',
+    region: 'Central',
+    matchNames: ['慈悲修道院']
+  },
+  {
+    id: 'storra_sanctuary',
+    name: '斯托拉圣堂',
+    faction: '圣堂武士团',
+    description: '征服王国圣堂武士团的总部，规模宏大，是圣堂武士的训练与生活中心。',
+    x: 46,
+    y: 37,
+    path: 'all',
+    region: 'Central',
+    matchNames: ['斯托拉圣堂', '圣堂']
   },
   // ... 其他地点数据以此类推
   {
@@ -124,13 +168,36 @@ export const locations: Location[] = [
     id: 'velis_capital',
     name: '维利斯 (Velis)',
     faction: '哈蒙德家族',
-    description: '西境的首都，银岸诸城中最璀璨的明珠。作为富庶的海港，它掌控着琥珀海的贸易命脉。',
-    ruler: '哈蒙德大公 (Duke Hammond)',
+    description: '西境的首都，银岸诸城中最璀璨的明珠。作为富庶的海港，它掌控着琥珀海的贸易命脉。这里有四座城门，曾是立法者统治前的王都。',
+    ruler: '西境大公 乔治·哈蒙德',
     x: 15,
     y: 45,
     path: 'all',
     region: 'West',
     matchNames: ['维利斯']
+  },
+  {
+    id: 'mireis',
+    name: '米瑞斯',
+    faction: '哈蒙德家族 / 马雷家族',
+    description: '西境银岸诸城的核心之一，以产出高品质的灰蓝色银矿石和精美的大理石闻名。',
+    ruler: '马雷侯爵 (Marquis Mare)',
+    x: 18,
+    y: 40,
+    path: 'all',
+    region: 'West',
+    matchNames: ['米瑞斯']
+  },
+  {
+    id: 'grey_rock_pass',
+    name: '灰岩隘口',
+    faction: '中立 / 边境',
+    description: '连接西境米瑞斯与北境的天然通道，地理位置十分重要。',
+    x: 30,
+    y: 25,
+    path: 'all',
+    region: 'West',
+    matchNames: ['灰岩隘口']
   },
   {
     id: 'silver_shore',
@@ -232,11 +299,11 @@ export const locations: Location[] = [
     matchNames: ['瓦列堡']
   },
   {
-    id: 'lesdos_territory',
+    id: 'resdo_territory',
     name: '雷斯多领地',
     faction: '雷斯多家族',
     description: '红鹿之路的起点，雷斯多伯爵的封地。这里有连绵的葡萄园和静静流淌的黑河。',
-    ruler: '雷斯多伯爵 (Earl Lesdos)',
+    ruler: '雷斯多伯爵 (Earl Resdo)',
     x: 55,
     y: 75,
     path: 'deer',
@@ -293,6 +360,17 @@ export const locations: Location[] = [
     path: 'all',
     region: 'East',
     matchNames: ['银脊山脉']
+  },
+  {
+    id: 'norell',
+    name: '诺瑞尔 (Norell)',
+    faction: '东境萨拉赫家族',
+    description: '东境的繁华城市，以银脊山脉的矿产贸易为生。',
+    x: 82,
+    y: 48,
+    path: 'all',
+    region: 'East',
+    matchNames: ['诺瑞尔']
   },
   {
     id: 'dawn_sea',

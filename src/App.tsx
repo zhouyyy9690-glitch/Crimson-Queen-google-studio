@@ -848,7 +848,7 @@ export default function App() {
 
   const isLastPara = currentParaIndex === activeParagraphs.length - 1;
   const isStartScene = currentSceneId === gameData.initialScene;
-  const showChoices = isLastPara && !currentScene.isEnding && (!isStartScene || isStarting);
+  const showChoices = isLastPara && !currentScene.isEnding && (!isStartScene || isStarting) && (currentScene.choices && currentScene.choices.length > 0);
   const showStartTrigger = isStartScene && isLastPara && !isStarting;
 
   return (
@@ -878,7 +878,7 @@ export default function App() {
       {/* 动态粒子背景：渲染尘埃、雪花或萤火虫 */}
       <ParticleBackground type={currentParticleType} />
       
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {currentScene.isEnding ? (
           /* 结局展示界面：当场景标记为 isEnding 时触发 */
           <EndingDisplay 
@@ -913,8 +913,8 @@ export default function App() {
         />
 
         {/* 核心剧情展示区域 */}
-        <div className="flex-grow flex flex-col justify-center relative z-20 pointer-events-auto">
-          <AnimatePresence mode="wait">
+        <div className="flex-grow flex flex-col justify-center relative z-10 pointer-events-auto">
+          <AnimatePresence>
             {currentScene.isChapter ? (
               /* 章节转场/标题页：显示“第一章”等大标题 */
               <ChapterSplash 
@@ -1115,6 +1115,7 @@ export default function App() {
             <ChapterSelectModal
               unlockedChapters={unlockedChapters}
               unlockedLocations={Array.from(unlockedLocations)}
+              unlockedInsights={unlockedInsights}
               history={history}
               onSelect={loadFromChapter}
               onClose={() => setShowChapterSelect(false)}

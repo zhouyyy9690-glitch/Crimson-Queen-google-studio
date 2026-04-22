@@ -1,13 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Lock, Play, RotateCcw, ChevronLeft, ChevronRight, MapPin, BookOpen, ScrollText } from 'lucide-react';
+import { X, Lock, Play, RotateCcw, ChevronLeft, ChevronRight, MapPin, BookOpen, ScrollText, Bird } from 'lucide-react';
+import { LunarPhaseIndicator } from './LunarPhaseIndicator';
 import { OrnateCorner } from './OrnateCorner';
+import { ChapterInsightsView } from './ChapterInsightsView';
 import { CHAPTERS_CONFIG, ROADS_CONFIG } from '../constants';
 import { locations } from '../locations';
+import { insights } from '../insights';
 
 interface ChapterSelectModalProps {
   unlockedChapters: string[];
   unlockedLocations: string[];
+  unlockedInsights: Set<string>;
   history: string[];
   onSelect: (chapterId: string) => void;
   onClose: () => void;
@@ -428,6 +432,7 @@ const RoadSelectionView = ({ onSelectRoad }: { onSelectRoad: (roadId: string) =>
 export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
   unlockedChapters,
   unlockedLocations,
+  unlockedInsights,
   history,
   onSelect,
   onClose,
@@ -436,6 +441,9 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
   const [viewMode, setViewMode] = useState<'roads' | 'chapters'>('roads');
   const [selectedRoad, setSelectedRoad] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [subPageView, setSubPageView] = useState<0 | 1>(0); // 0: Summary, 1: Insights
+  const [pageTrigger, setPageTrigger] = useState(0);
+  const [pageDirection, setPageDirection] = useState<'next' | 'prev'>('next');
 
   // 根据选中的路线筛选章节
   const filteredChapters = useMemo(() => {
@@ -449,6 +457,7 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
   const handleSelectRoad = (roadId: string) => {
     setSelectedRoad(roadId);
     setCurrentPage(0);
+    setSubPageView(0);
     setViewMode('chapters');
   };
 
@@ -456,8 +465,27 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
     setViewMode('roads');
   };
 
-  const nextPage = () => setCurrentPage(prev => (prev + 1) % filteredChapters.length);
-  const prevPage = () => setCurrentPage(prev => (prev - 1 + filteredChapters.length) % filteredChapters.length);
+  const nextPage = () => {
+    setPageDirection('next');
+    setPageTrigger(prev => prev + 1);
+    if (subPageView === 0) {
+      setSubPageView(1);
+    } else {
+      setSubPageView(0);
+      setCurrentPage(prev => (prev + 1) % filteredChapters.length);
+    }
+  };
+  
+  const prevPage = () => {
+    setPageDirection('prev');
+    setPageTrigger(prev => prev + 1);
+    if (subPageView === 1) {
+      setSubPageView(0);
+    } else {
+      setSubPageView(1);
+      setCurrentPage(prev => (prev - 1 + filteredChapters.length) % filteredChapters.length);
+    }
+  };
 
   return (
     <motion.div 
@@ -477,12 +505,35 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
       >
         <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-48 bg-gradient-to-r from-transparent via-black/40 to-transparent z-40 pointer-events-none hidden md:block" />
 
-        <div className="z-[70] pointer-events-none">
+        <div className="z-[71] pointer-events-none">
           <OrnateCorner position="tl" />
           <OrnateCorner position="tr" />
           <OrnateCorner position="bl" />
           <OrnateCorner position="br" />
         </div>
+
+        {/* Global Navigation Buttons - Always Visible and Stable */}
+        {viewMode === 'chapters' && (
+          <div className="absolute inset-0 z-[120] pointer-events-none flex items-center justify-between px-4 md:px-8">
+            <motion.button 
+              whileHover={{ scale: 1.1, x: -5 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={prevPage}
+              className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-full bg-black/40 md:bg-white/5 backdrop-blur-md border border-white/10 text-white/50 hover:text-amber-500 hover:border-amber-500/50 transition-all pointer-events-auto group"
+            >
+              <ChevronLeft className="w-6 h-6 md:w-8 md:h-8 group-hover:-translate-x-1 transition-transform" />
+            </motion.button>
+
+            <motion.button 
+              whileHover={{ scale: 1.1, x: 5 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={nextPage}
+              className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center rounded-full bg-black/40 md:bg-white/5 backdrop-blur-md border border-white/10 text-white/50 hover:text-amber-500 hover:border-amber-500/50 transition-all pointer-events-auto group"
+            >
+              <ChevronRight className="w-6 h-6 md:w-8 md:h-8 group-hover:translate-x-1 transition-transform" />
+            </motion.button>
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
           {viewMode === 'roads' ? (
@@ -498,132 +549,164 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
             </motion.div>
           ) : (
             <motion.div
-              key="chapter-selection"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.4 }}
-              className="w-full flex flex-col md:flex-row flex-grow order-1 md:order-1 h-full"
+              key={subPageView === 0 ? "chapter-summary" : "chapter-insights"}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+              className="w-full flex-grow order-1 md:order-1 h-full overflow-hidden"
             >
-              {/* Left Column: Text Content */}
-              <div className="w-full md:w-1/2 h-1/2 md:h-full flex flex-col p-8 md:p-16 lg:p-20 relative bg-[#0e0e0e] border-b md:border-b-0 md:border-r border-amber-900/10 z-10">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/asfalt-dark.png')] opacity-[0.03] pointer-events-none" />
-                
-                <AnimatePresence mode="wait">
-                  {currentChapter && (
-                    <motion.div
-                      key={currentChapter.id}
-                      initial={{ x: -30, opacity: 0, filter: 'blur(10px)' }}
-                      animate={{ x: 0, opacity: 1, filter: 'blur(0px)' }}
-                      exit={{ x: 30, opacity: 0, filter: 'blur(10px)' }}
-                      transition={{ duration: 0.4 }}
-                      className="h-full flex flex-col"
-                    >
-                      <button 
-                        onClick={handleBackToRoads}
-                        className="flex items-center gap-2 text-amber-900/40 hover:text-amber-600 transition-colors text-[9px] uppercase tracking-[0.4em] mb-8 group"
-                      >
-                        <ChevronLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />
-                        返回分册 · Path Index
-                      </button>
-
-                      <div className="flex flex-col mb-6 md:mb-10">
-                        <span className="font-chinese italic text-amber-900/40 text-sm md:text-lg lg:text-xl tracking-[0.3em] font-medium mb-4 italic">
-                          {currentChapter.number}
-                        </span>
-                        <h1 className={`font-chinese text-3xl md:text-5xl lg:text-7xl tracking-tighter leading-tight font-medium ${isUnlocked ? 'text-amber-100/90' : 'text-neutral-800'}`}>
-                          {currentChapter.title}
-                        </h1>
-
-                        <ChapterConstellation chapter={currentChapter} history={history} />
-                        <p className="font-typewriter text-[8px] md:text-[10px] lg:text-xs text-amber-900/60 uppercase tracking-[0.5em] mt-3 md:mt-4 mb-8">
-                          {currentChapter.subtitle}
-                        </p>
-
-                        {isUnlocked && (
-                          <div className="flex items-center gap-5">
-                             <ScrollText className="w-8 h-8 text-amber-600/40" />
-                             <div className="flex flex-col">
-                               <span className="text-[7px] text-amber-900/40 uppercase tracking-[0.3em] mb-1">Exploration Progress</span>
-                               <span className="font-typewriter text-[14px] md:text-[18px] text-amber-600/80 tracking-[0.2em] leading-none">
-                                {currentChapter.highlightLocations?.filter(id => unlockedLocations.includes(id)).length || 0}
-                                <span className="mx-1 text-amber-900/40 text-[10px] md:text-[12px]">/</span>
-                                {currentChapter.highlightLocations?.length || 0}
-                              </span>
-                             </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex-grow space-y-6 md:space-y-10 overflow-y-auto no-scrollbar mobile-no-scrollbar">
-                        <p className={`text-sm md:text-base lg:text-xl font-serif italic leading-[1.8] max-w-lg border-l border-amber-900/10 pl-6 ${isUnlocked ? 'text-neutral-400' : 'text-neutral-800'}`}>
-                          {currentChapter.description}
-                        </p>
-
-                        {isUnlocked ? (
-                          <motion.button
-                            whileHover={{ scale: 1.05, backgroundColor: 'rgba(217, 119, 6, 0.05)' }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => onSelect(currentChapter.id)}
-                            className="flex items-center gap-4 md:gap-5 px-8 md:px-10 py-3 md:py-5 bg-amber-900/10 border border-amber-900/20 hover:border-amber-600/60 text-amber-600 uppercase tracking-[0.4em] text-[8px] md:text-xs font-chinese font-medium transition-all group mt-6 md:mt-16 shadow-lg"
+              {subPageView === 0 ? (
+                <div className="w-full h-full flex flex-col md:flex-row">
+                  {/* Left Column: Text Content */}
+                  <div className="w-full md:w-1/2 h-1/2 md:h-full flex flex-col p-8 md:p-16 lg:p-20 relative bg-[#0e0e0e] border-b md:border-b-0 md:border-r border-amber-900/10 z-10">
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/asfalt-dark.png')] opacity-[0.03] pointer-events-none" />
+                    
+                    <AnimatePresence mode="wait">
+                      {currentChapter && (
+                        <motion.div
+                          key={currentChapter.id}
+                          initial={{ x: -30, opacity: 0, filter: 'blur(10px)' }}
+                          animate={{ x: 0, opacity: 1, filter: 'blur(0px)' }}
+                          exit={{ x: 30, opacity: 0, filter: 'blur(10px)' }}
+                          transition={{ duration: 0.4 }}
+                          className="h-full flex flex-col"
+                        >
+                          <button 
+                            onClick={handleBackToRoads}
+                            className="flex items-center gap-2 text-amber-900/40 hover:text-amber-600 transition-colors text-[9px] uppercase tracking-[0.4em] mb-8 group"
                           >
-                            <Play className="w-3 h-3 md:w-4 md:h-4 fill-current" />
-                            揭开记忆 · Recall the Path
-                          </motion.button>
-                        ) : (
-                          <div className="flex items-center gap-4 px-8 md:px-10 py-3 md:py-5 bg-white/[0.01] border border-white/5 text-neutral-800 uppercase tracking-[0.4em] text-[8px] md:text-xs mt-6 md:mt-16 cursor-not-allowed">
-                            <Lock className="w-3 h-3 md:w-4 md:h-4 opacity-50" />
-                            尚未解锁 · Bound by Fate
+                            <ChevronLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />
+                            返回分册 · Path Index
+                          </button>
+
+                          <div className="flex flex-col mb-6 md:mb-10">
+                            <span className="font-chinese italic text-amber-900/40 text-sm md:text-lg lg:text-xl tracking-[0.3em] font-medium mb-4 italic">
+                              {currentChapter.number}
+                            </span>
+                            <h1 className={`font-chinese text-3xl md:text-5xl lg:text-7xl tracking-tighter leading-tight font-medium ${isUnlocked ? 'text-amber-100/90' : 'text-neutral-800'}`}>
+                              {currentChapter.title}
+                            </h1>
+
+                            <ChapterConstellation chapter={currentChapter} history={history} />
+                            <p className="font-typewriter text-[8px] md:text-[10px] lg:text-xs text-amber-900/60 uppercase tracking-[0.5em] mt-3 md:mt-4 mb-8">
+                              {currentChapter.subtitle}
+                            </p>
+
+                            {isUnlocked && (
+                              <div className="flex items-center gap-5">
+                                 {currentChapter.roadId === 'fox' ? (
+                                   <LunarPhaseIndicator 
+                                     progress={(currentChapter.highlightLocations?.filter(id => unlockedLocations.includes(id)).length || 0) / (currentChapter.highlightLocations?.length || 1)} 
+                                     size={32}
+                                     color="#D4AF37"
+                                     className="drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]"
+                                   />
+                                 ) : (
+                                   <ScrollText className="w-8 h-8 text-amber-600/40" />
+                                 )}
+                                 <div className="flex flex-col">
+                                   <span className="text-[7px] text-amber-900/40 uppercase tracking-[0.3em] mb-1">
+                                     {currentChapter.roadId === 'fox' ? 'Divine Presence / 神圣在场' : 'Exploration Progress / 探索进度'}
+                                   </span>
+                                   <span className="font-typewriter text-[14px] md:text-[18px] text-amber-600/80 tracking-[0.2em] leading-none">
+                                    {currentChapter.highlightLocations?.filter(id => unlockedLocations.includes(id)).length || 0}
+                                    <span className="mx-1 text-amber-900/40 text-[10px] md:text-[12px]">/</span>
+                                    {currentChapter.highlightLocations?.length || 0}
+                                  </span>
+                                 </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      <div className="mt-auto flex items-center justify-between font-typewriter text-[8px] md:text-[9px] uppercase tracking-[0.6em] text-amber-900/20 pt-4 md:pt-8 border-t border-amber-900/5">
-                        <span>Folio {currentPage + 1}</span>
-                        <span>{ROADS_CONFIG.find(r => r.id === selectedRoad)?.title}</span>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                          <div className="flex-grow space-y-6 md:space-y-10 overflow-y-auto no-scrollbar mobile-no-scrollbar">
+                            <p className={`text-sm md:text-base lg:text-xl font-serif italic leading-[1.8] max-w-lg border-l border-amber-900/10 pl-6 ${isUnlocked ? 'text-neutral-400' : 'text-neutral-800'}`}>
+                              {currentChapter.description}
+                            </p>
 
-              {/* Right Column: Visual Content */}
-              <div className="w-full md:w-1/2 h-1/2 md:h-full relative bg-[#050505] overflow-hidden">
-                <AnimatePresence mode="wait">
-                  {currentChapter && (
-                    <motion.div
-                      key={currentChapter.id}
-                      initial={{ scale: 1.05, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.98, opacity: 0 }}
-                      transition={{ duration: 0.8 }}
-                      className="w-full h-full"
-                    >
-                      <ChapterMapPreview 
-                        chapter={currentChapter} 
-                        isUnlocked={isUnlocked} 
-                        unlockedLocations={unlockedLocations}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                            {isUnlocked ? (
+                              <motion.button
+                                whileHover={{ scale: 1.05, backgroundColor: 'rgba(217, 119, 6, 0.05)' }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => onSelect(currentChapter.id)}
+                                className="flex items-center gap-4 md:gap-5 px-8 md:px-10 py-3 md:py-5 bg-amber-900/10 border border-amber-900/20 hover:border-amber-600/60 text-amber-600 uppercase tracking-[0.4em] text-[8px] md:text-xs font-chinese font-medium transition-all group mt-6 md:mt-16 shadow-lg"
+                              >
+                                <Play className="w-3 h-3 md:w-4 md:h-4 fill-current" />
+                                揭开记忆 · Recall the Path
+                              </motion.button>
+                            ) : (
+                              <div className="flex items-center gap-4 px-8 md:px-10 py-3 md:py-5 bg-white/[0.01] border border-white/5 text-neutral-800 uppercase tracking-[0.4em] text-[8px] md:text-xs mt-6 md:mt-16 cursor-not-allowed">
+                                <Lock className="w-3 h-3 md:w-4 md:h-4 opacity-50" />
+                                尚未解锁 · Bound by Fate
+                              </div>
+                            )}
+                          </div>
 
-                <div className="absolute top-6 md:top-12 right-6 md:right-12 z-30 text-right">
-                  <h3 className="font-typewriter text-[8px] md:text-[10px] text-amber-600/60 tracking-[0.8em] uppercase mb-1">Topography</h3>
-                  <div className="h-px w-20 md:w-32 bg-amber-900/20 ml-auto" />
-                </div>
-
-                {filteredChapters.length > 1 && (
-                  <div className="absolute bottom-8 right-8 flex gap-4 z-50">
-                    <button onClick={prevPage} className="w-10 h-10 flex items-center justify-center rounded-full bg-black/80 border border-amber-900/20 text-amber-900/50 hover:text-amber-500 hover:scale-110 transition-all pointer-events-auto">
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <button onClick={nextPage} className="w-10 h-10 flex items-center justify-center rounded-full bg-black/80 border border-amber-900/20 text-amber-900/50 hover:text-amber-500 hover:scale-110 transition-all pointer-events-auto">
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
+                          <div className="mt-auto flex items-center justify-between font-typewriter text-[8px] md:text-[9px] uppercase tracking-[0.6em] text-amber-900/20 pt-4 md:pt-8 border-t border-amber-900/5">
+                            <span>Folio {currentPage + 1}</span>
+                            <div className="flex items-center gap-2">
+                              <span>P.1</span>
+                              <div className="w-1 h-1 rounded-full bg-amber-600" />
+                              <span className="opacity-40">P.2</span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                )}
-              </div>
+
+                  {/* Right Column: Visual Content */}
+                  <div className="w-full md:w-1/2 h-1/2 md:h-full relative bg-[#050505] overflow-hidden">
+                    <AnimatePresence mode="wait">
+                      {currentChapter && (
+                        <motion.div
+                          key={currentChapter.id}
+                          initial={{ scale: 1.05, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.98, opacity: 0 }}
+                          transition={{ duration: 0.8 }}
+                          className="w-full h-full"
+                        >
+                          <ChapterMapPreview 
+                            chapter={currentChapter} 
+                            isUnlocked={isUnlocked} 
+                            unlockedLocations={unlockedLocations}
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    <div className="absolute top-6 md:top-12 right-6 md:right-12 z-30 text-right">
+                      <h3 className="font-typewriter text-[8px] md:text-[10px] text-amber-600/60 tracking-[0.8em] uppercase mb-1">Topography</h3>
+                      <div className="h-px w-20 md:w-32 bg-amber-900/20 ml-auto" />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full h-full relative">
+                   <ChapterInsightsView 
+                     chapter={currentChapter}
+                     insights={insights}
+                     unlockedInsights={unlockedInsights}
+                     locations={locations}
+                     pageDirection={pageDirection}
+                     pageTrigger={pageTrigger}
+                   />
+                   
+                   {/* Raven hint in bottom corner */}
+                   <div className="absolute bottom-8 right-8 md:bottom-12 md:right-12 z-[60] flex items-center gap-4 text-neutral-800/30">
+                      <div className="text-right">
+                        <p className="text-[9px] uppercase tracking-[0.3em] font-display">Folio {currentPage + 1}</p>
+                        <div className="flex items-center justify-end gap-2 mt-1">
+                          <span className="opacity-40">P.1</span>
+                          <div className="w-1 h-1 rounded-full bg-neutral-900/20" />
+                          <span className="text-rose-900 font-bold">P.2</span>
+                        </div>
+                      </div>
+                      <Bird className="w-8 h-8 opacity-20" />
+                   </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
