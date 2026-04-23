@@ -23,7 +23,6 @@ export const dayScenes: Record<string, Scene> = {
 
   'F7-Yourthoughts1': {
     id: 'F7-Yourthoughts1',
-    bgm: 'MAIN_THEME',
     title: '沉思',
     description: '关于身世的思考',
     paragraphs: [
@@ -118,7 +117,6 @@ export const dayScenes: Record<string, Scene> = {
 
   'F10-1-TellTruth': {
     id: 'F10-1-TellTruth',
-    bgm: 'MAIN_THEME',
     title: '你的主动把他吓了一大跳！',
     description: '',
     paragraphs: [
@@ -209,7 +207,6 @@ export const dayScenes: Record<string, Scene> = {
 
   'F9-1-wallshaveears': {
     id: 'F9-1-wallshaveears',
-    bgm: 'MAIN_THEME',
     title: '嘘',
     description: '比较完整的对话',
     paragraphs: [

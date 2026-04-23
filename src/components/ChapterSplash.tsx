@@ -111,26 +111,27 @@ export const ChapterSplash: React.FC<ChapterSplashProps> = ({
           {/* 章节页眉：拉丁语标题与罗马数字 */}
           <div className="flex flex-col items-center">
             <div className={`w-12 h-px bg-amber-950/40 mb-6 transition-all duration-1200 ${isExiting ? 'w-80 opacity-0' : ''}`} />
-            <h4 className="font-typewriter italic text-amber-950/60 tracking-[0.4em] uppercase text-sm md:text-base">
+            <h4 className="font-serif italic text-amber-950/60 tracking-[0.4em] uppercase text-xs md:text-sm">
               Incipit Liber (卷首)
             </h4>
-            <h2 className="font-typewriter text-5xl md:text-7xl text-amber-950 tracking-[0.2em] mt-2 mb-2">
+            <h2 className="font-display text-5xl md:text-8xl text-amber-950/90 tracking-[0.25em] mt-2 mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
               {chapterNumber}
             </h2>
             <div className={`w-12 h-px bg-amber-950/40 mt-4 transition-all duration-1200 ${isExiting ? 'w-80 opacity-0' : ''}`} />
           </div>
 
           {/* 章节主、副标题：带有墨水晕开效果的渐变动画 */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <motion.h1 
-              animate={isExiting ? { letterSpacing: "0.3em", opacity: 0.6 } : {}}
+              animate={isExiting ? { letterSpacing: "0.4em", opacity: 0.6 } : {}}
               transition={{ duration: 2.5 }}
-              className="font-display text-4xl md:text-6xl text-amber-900 tracking-tight leading-none"
+              className="font-chinese font-bold text-5xl md:text-7xl text-amber-950 tracking-[0.1em] leading-tight drop-shadow-sm"
+              style={{ filter: "drop-shadow(0px 2px 2px rgba(120, 50, 0, 0.2))" }}
             >
               {chapterTitle}
             </motion.h1>
             {chapterSubtitle && (
-              <p className="font-gothic italic text-amber-800/70 text-xl md:text-2xl tracking-widest uppercase">
+              <p className="font-gothic italic text-amber-900/80 text-xl md:text-3xl tracking-[0.3em] uppercase opacity-80 decoration-amber-900/20 underline underline-offset-8">
                 {chapterSubtitle}
               </p>
             )}
@@ -146,7 +147,7 @@ export const ChapterSplash: React.FC<ChapterSplashProps> = ({
                  transition={{ repeat: Infinity, duration: 4, delay: 3 }}
                  className="pt-20"
               >
-                <p className="font-typewriter text-amber-950/40 text-[10px] tracking-[0.4em] uppercase">
+                <p className="font-serif italic text-amber-950/50 text-[11px] tracking-[0.4em] uppercase">
                   点击屏幕，揭开命运的篇章 · Tap to unroll the destiny
                 </p>
               </motion.div>

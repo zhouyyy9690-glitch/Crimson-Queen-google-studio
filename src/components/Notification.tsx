@@ -1,74 +1,86 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
-/**
- * 全局通知系统 Props 接口
- * @interface NotificationProps
- * @property {object} notification - 通知状态对象
- * @property {string} notification.title - 通知的标题内容
- * @property {boolean} notification.visible - 是否显示通知
- * @property {string} [notification.type] - 通知的类型（结局、人物、地点、见闻）
- */
+interface NotificationItem {
+  id: string;
+  title: string;
+  type?: 'ending' | 'character' | 'location' | 'insight';
+}
+
 interface NotificationProps {
-  notification: {
-    title: string;
-    visible: boolean;
-    type?: 'ending' | 'character' | 'location' | 'insight';
-  };
+  notifications: NotificationItem[];
 }
 
 /**
- * Notification 组件 - 全局通知浮层
- * 当玩家解锁新的角色、地点、传闻或达成结局时，在屏幕顶部显示提示
+ * Notification 组件 - 全局通知浮层 (复古丝帛标签风格)
+ * 支持多条消息堆叠展示，避免信息被遮挡。
  */
-export const Notification: React.FC<NotificationProps> = ({ notification }) => {
+export const Notification: React.FC<NotificationProps> = ({ notifications }) => {
   return (
-    <AnimatePresence>
-      {notification.visible && (
-        <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -50 }}
-          className={`fixed top-4 md:top-8 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 z-[200] px-4 py-3 md:px-8 md:py-4 bg-[#0d0d0d] border-b-2 md:border-2 shadow-[0_4px_30px_rgba(0,0,0,0.5)] flex items-center justify-center md:justify-start gap-3 md:gap-4 backdrop-blur-md ${
-            notification.type === 'location' ? 'border-emerald-500' : 
-            notification.type === 'insight' ? 'border-indigo-400' : 
-            'border-amber-600'
-          }`}
-        >
-          {/* 左侧脉冲圆点指示器 */}
-          <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full animate-pulse shrink-0 ${
-            notification.type === 'location' ? 'bg-emerald-500' : 
-            notification.type === 'insight' ? 'bg-indigo-400' : 
-            'bg-amber-600'
-          }`} />
+    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[1000] flex flex-col items-center gap-4 pointer-events-none w-full max-w-sm">
+      <AnimatePresence mode="popLayout">
+        {notifications.map((note) => (
+          <motion.div
+            key={note.id}
+            initial={{ opacity: 0, y: -20, scale: 0.9, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, scale: 0.9, y: -10, filter: 'blur(5px)' }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="relative flex items-center justify-center py-3 px-10 group"
+          >
+            {/* 丝帛/宣纸底层背景 */}
+            <div className={`absolute inset-0 shadow-2xl opacity-95 ${
+              note.type === 'location' ? 'bg-[#1a2f23]' : 
+              note.type === 'character' ? 'bg-[#2a1a1a]' : 
+              note.type === 'insight' ? 'bg-[#1a1a2a]' :
+              'bg-[#2d1810]'
+            }`} 
+            style={{
+              clipPath: 'polygon(5% 0%, 95% 0%, 100% 50%, 95% 100%, 5% 100%, 0% 50%)',
+              border: note.type === 'location' ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(180,83,9,0.3)'
+            }}>
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/handmade-paper.png')] opacity-20 mix-blend-overlay" />
+            </div>
 
-          {/* 通知文本内容 */}
-          <span className={`font-display tracking-[0.15em] md:tracking-[0.2em] uppercase text-[10px] md:text-sm whitespace-nowrap overflow-hidden text-ellipsis ${
-            notification.type === 'location' ? 'text-emerald-500' : 
-            notification.type === 'insight' ? 'text-indigo-400' : 
-            'text-amber-600'
-          }`}>
-            <span className="opacity-60">
-              {/* 根据通知类型显示前缀 */}
-              {notification.type === 'character' ? '人物解锁 · ' : 
-               notification.type === 'location' ? '地点解锁 · ' : 
-               ''}
-            </span>
-            {notification.title}
-            <span className="opacity-60">
-              {/* 见闻通知的后缀 */}
-              {notification.type === 'insight' ? ' · 已记录' : ''}
-            </span>
-          </span>
+            {/* 装饰侧边线 */}
+            <div className={`absolute left-4 top-1/2 -translate-y-1/2 w-1 h-3 rounded-full ${
+              note.type === 'location' ? 'bg-emerald-500/60' : 
+              note.type === 'insight' ? 'bg-indigo-400/60' : 
+              'bg-amber-600/60'
+            }`} />
+            
+            <div className={`absolute right-4 top-1/2 -translate-y-1/2 w-1 h-3 rounded-full ${
+              note.type === 'location' ? 'bg-emerald-500/60' : 
+              note.type === 'insight' ? 'bg-indigo-400/60' : 
+              'bg-amber-600/60'
+            }`} />
 
-          {/* 右侧脉冲圆点指示器 */}
-          <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full animate-pulse shrink-0 ${
-            notification.type === 'location' ? 'bg-emerald-500' : 
-            notification.type === 'insight' ? 'bg-indigo-400' : 
-            'bg-amber-600'
-          }`} />
-        </motion.div>
-      )}
-    </AnimatePresence>
+            {/* 通知主文本 */}
+            <div className="relative z-10 flex flex-col items-center">
+              <span className={`font-serif italic text-[8px] tracking-[0.4em] uppercase mb-1 ${
+                note.type === 'location' ? 'text-emerald-500/40' : 
+                note.type === 'insight' ? 'text-indigo-400/40' : 
+                'text-amber-600/40'
+              }`}>
+                {note.type === 'character' ? 'Chronicle Recorded' : 
+                 note.type === 'location' ? 'Map Annotated' : 
+                 note.type === 'insight' ? 'Secret Observed' : 'Fate Sealed'}
+              </span>
+              
+              <h4 className={`font-chinese text-sm md:text-base tracking-[0.2em] font-medium ${
+                note.type === 'location' ? 'text-emerald-200/90' : 
+                note.type === 'insight' ? 'text-indigo-200/90' : 
+                'text-amber-100/90'
+              }`}>
+                {note.title}
+              </h4>
+            </div>
+
+            {/* 顶部的装饰性“吊绳” */}
+            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-px h-2 bg-amber-900/20" />
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
   );
 };

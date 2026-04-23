@@ -21,27 +21,22 @@ interface ChapterSelectModalProps {
 // --------------------------------------------------------------------------------
 // 章节星座图组件 (Chapter Constellation)
 // --------------------------------------------------------------------------------
-// --------------------------------------------------------------------------------
-// 章节星座图组件 (手绘风格，无动画)
-// --------------------------------------------------------------------------------
 const ChapterConstellation = ({ chapter, history }: { chapter: any; history: string[] }) => {
-  if (!chapter.constellation) return null;
+  if (!chapter || !chapter.constellation || chapter.constellation.length === 0) return null;
 
-  // 星座连线逻辑 (固定连接顺序)
-  const connections = [
-    [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6]
-  ];
+  const nodeCount = chapter.constellation.length;
+  // 动态生成连线逻辑
+  const connections: [number, number][] = [];
+  for (let i = 0; i < nodeCount - 1; i++) {
+    connections.push([i, i + 1]);
+  }
 
-  // 节点坐标 (百分比) - 模拟天体轨迹
-  const coords = [
-    { x: 20, y: 30 },
-    { x: 35, y: 25 },
-    { x: 50, y: 40 },
-    { x: 65, y: 20 },
-    { x: 80, y: 35 },
-    { x: 70, y: 60 },
-    { x: 85, y: 75 }
+  // 节点坐标 (百分比) - 模拟天体轨迹 (根据节点数动态分布或使用预设)
+  const defaultCoords = [
+    { x: 20, y: 30 }, { x: 35, y: 25 }, { x: 50, y: 40 }, 
+    { x: 65, y: 20 }, { x: 80, y: 35 }, { x: 70, y: 60 }, { x: 85, y: 75 }
   ];
+  const coords = defaultCoords.slice(0, nodeCount);
 
   // 生成四角星路径 (中心点坐标，半径)
   const getStarPath = (cx: number, cy: number, rOuter: number, rInner: number) => {
@@ -57,28 +52,32 @@ const ChapterConstellation = ({ chapter, history }: { chapter: any; history: str
   };
 
   return (
-    <div className="absolute top-1/2 -right-4 md:right-4 -translate-y-1/2 w-32 md:w-48 h-64 md:h-80 pointer-events-none opacity-80 z-20">
-      <svg className="w-full h-full overflow-visible">
+    <div className="absolute top-1/2 -right-8 md:right-0 -translate-y-1/2 w-40 md:w-56 h-64 md:h-80 pointer-events-none opacity-80 z-20 overflow-visible">
+      <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
         {/* 连线 */}
         {connections.map(([from, to], i) => {
+          const fromNode = chapter.constellation[from];
+          const toNode = chapter.constellation[to];
+          if (!fromNode || !toNode) return null;
+
           const isFromLit = history.some(id =>
-            chapter.constellation[from].matchScenes.some((m: string) => id.includes(m))
+            fromNode.matchScenes.some((m: string) => id.includes(m))
           );
           const isToLit = history.some(id =>
-            chapter.constellation[to].matchScenes.some((m: string) => id.includes(m))
+            toNode.matchScenes.some((m: string) => id.includes(m))
           );
           const isLineLit = isFromLit && isToLit;
 
           return (
             <line
               key={`line-${i}`}
-              x1={`${coords[from].x}%`}
-              y1={`${coords[from].y}%`}
-              x2={`${coords[to].x}%`}
-              y2={`${coords[to].y}%`}
-              stroke={isLineLit ? "#D4AF37" : "#4A3B30"}  // 淡金色 vs 灰色
-              strokeWidth="1"
-              strokeDasharray="3,3"
+              x1={coords[from].x}
+              y1={coords[from].y}
+              x2={coords[to].x}
+              y2={coords[to].y}
+              stroke={isLineLit ? "#D4AF37" : "#4A3B30"}
+              strokeWidth="0.5"
+              strokeDasharray="1,1"
               opacity={0.6}
             />
           );
@@ -90,35 +89,34 @@ const ChapterConstellation = ({ chapter, history }: { chapter: any; history: str
             node.matchScenes.some((match: string) => id.includes(match))
           );
           const pos = coords[i];
+          if (!pos) return null;
           const isMoon = node.id === 'night' || node.icon === 'moon';
           const starColor = isLit ? "#D4AF37" : "#6B5B4B";
-          const centerX = `${pos.x}%`;
-          const centerY = `${pos.y}%`;
-          const size = isMoon ? 0 : 6; // 普通星星半径
+          const centerX = pos.x;
+          const centerY = pos.y;
+          const size = isMoon ? 0 : 6; ;
 
           return (
             <g key={node.id}>
               {isMoon ? (
-                // 月亮：直接使用文字符号，颜色根据点亮状态
                 <text
                   x={centerX}
                   y={centerY}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fill={isLit ? "#D4AF37" : "#6B5B4B"}
-                  className="text-[16px] font-serif"
-                  style={{ fontFamily: 'serif', transform: 'translate(0, -2px)' }}
+                  className="text-[6px] font-serif"
+                  style={{ fontFamily: 'serif', transform: 'translate(0, -1px)' }}
                 >
                   ☾
                 </text>
               ) : (
-                // 手绘星星：绘制一个简单的四角星（星芒形状）
-                <g transform={`translate(${pos.x}%, ${pos.y}%)`}>
+                <g transform={`translate(${pos.x}, ${pos.y})`}>
                   <path
-                    d={getStarPath(0, 0, 8, 3)}
+                    d={getStarPath(0, 0, 3, 1.2)}
                     fill={starColor}
                     stroke={isLit ? "#D4AF37" : "#6B5B4B"}
-                    strokeWidth="0.5"
+                    strokeWidth="0.2"
                   />
                 </g>
               )}
@@ -126,10 +124,10 @@ const ChapterConstellation = ({ chapter, history }: { chapter: any; history: str
               {/* 标签：只有点亮才显示 */}
               {isLit && (
                 <text
-                  x={`${pos.x}%`}
-                  y={`${pos.y + 12}%`}
+                  x={pos.x}
+                  y={pos.y + 5}
                   textAnchor="middle"
-                  className="fill-amber-100/70 text-[5px] md:text-[7px] tracking-[0.2em] font-chinese font-light pointer-events-none"
+                  className="fill-amber-100/70 text-[2.5px] tracking-[0.2em] font-chinese font-light pointer-events-none"
                 >
                   {node.label}
                 </text>
@@ -466,6 +464,7 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
   };
 
   const nextPage = () => {
+    if (filteredChapters.length === 0) return;
     setPageDirection('next');
     setPageTrigger(prev => prev + 1);
     if (subPageView === 0) {
@@ -477,6 +476,7 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
   };
   
   const prevPage = () => {
+    if (filteredChapters.length === 0) return;
     setPageDirection('prev');
     setPageTrigger(prev => prev + 1);
     if (subPageView === 1) {

@@ -136,18 +136,25 @@ export default function App() {
   const mainAudioRef = useRef<HTMLAudioElement | null>(null);
   const ambienceAudioRef = useRef<HTMLAudioElement | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
-  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 核心状态：多重通知队列
+  const [notifications, setNotifications] = useState<{id: string, title: string, type: 'ending' | 'character' | 'location' | 'insight'}[]>([]);
 
   // 触发全局通知（解锁角色/地点等）
   const triggerNotification = (title: string, type: 'ending' | 'character' | 'location' | 'insight') => {
-    if (notificationTimeoutRef.current) {
-      clearTimeout(notificationTimeoutRef.current);
-    }
-    setNotification({ title, visible: true, type });
-    notificationTimeoutRef.current = setTimeout(() => {
-      setNotification(prev => ({ ...prev, visible: false }));
-      notificationTimeoutRef.current = null;
-    }, 5000); 
+    const id = Math.random().toString(36).substring(2, 9);
+    
+    // 根据用户要求修改地名和人名的提示文本
+    let displayTitle = title;
+    if (type === 'location') displayTitle = '新的地图已注释';
+    if (type === 'character') displayTitle = '新的人物已记录';
+
+    setNotifications(prev => [...prev, { id, title: displayTitle, type }]);
+    
+    // 5秒后自动移除该通知
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 5000);
   };
 
   // 监听全局交互以解锁音频
@@ -265,8 +272,6 @@ export default function App() {
     if (!selectedCharacterId) return null;
     return characters.find(c => c.id === selectedCharacterId) || null;
   }, [selectedCharacterId]);
-
-  const [notification, setNotification] = useState<{title: string, visible: boolean, type?: 'ending' | 'character' | 'location' | 'insight'}>({ title: '', visible: false });
 
   // --- 数据持久化与生命周期 (Persistence & Lifecycle) ---
 
@@ -935,15 +940,17 @@ export default function App() {
         <OrnateCorner position="br" />
 
         {/* 顶部页眉：显示标题、音量调节器、历史记录等 */}
-        <GameHeader 
-          showVolumeMixer={showVolumeMixer}
-          setShowVolumeMixer={setShowVolumeMixer}
-          isMuted={isMuted}
-          setIsMuted={setIsMuted}
-          setShowHistory={setShowHistory}
-          showHistory={showHistory}
-          returnToTitle={returnToTitle}
-        />
+        {!currentScene.isChapter && (
+          <GameHeader 
+            showVolumeMixer={showVolumeMixer}
+            setShowVolumeMixer={setShowVolumeMixer}
+            isMuted={isMuted}
+            setIsMuted={setIsMuted}
+            setShowHistory={setShowHistory}
+            showHistory={showHistory}
+            returnToTitle={returnToTitle}
+          />
+        )}
 
         {/* 核心剧情展示区域 */}
         <div className="flex-grow flex flex-col justify-center relative z-10 pointer-events-auto">
@@ -1054,7 +1061,7 @@ export default function App() {
         </AnimatePresence>
 
         {/* 全局通知浮层：解锁角色、地点或传闻时的顶部提示 */}
-        <Notification notification={notification} />
+        <Notification notifications={notifications} />
 
         {/* 结局画廊：查看已达成的所有剧情结局 */}
         <EndingGallery 
@@ -1136,12 +1143,14 @@ export default function App() {
         />
 
         {/* 底部页脚：包含全局导航（人物志、地图）和游戏标题 */}
-        <GameFooter 
-          setShowChapterSelect={setShowChapterSelect}
-          setShowCompendium={setShowCompendium}
-          setShowMap={setShowMap}
-          currentSceneId={currentSceneId}
-        />
+        {!currentScene.isChapter && (
+          <GameFooter 
+            setShowChapterSelect={setShowChapterSelect}
+            setShowCompendium={setShowCompendium}
+            setShowMap={setShowMap}
+            currentSceneId={currentSceneId}
+          />
+        )}
 
         {/* 章节选择模态框：用于跨章节跳转 */}
         <AnimatePresence>

@@ -55,32 +55,19 @@ export const CHAPTERS_CONFIG = [
     description: '赫西之女，漂泊乡野。在那段宁静而危险的日子里，命运的齿轮悄然转动。',
     icon: Leaf,
     color: 'emerald',
-    startSceneId: 'start',
+    startSceneId: 'F1-fox',
     constellation: [
-      { id: 'bishop', label: '主教', matchScenes: ['F1-morning-intro', 'start'], icon: 'star' },
-      { id: 'quarrel', label: '争吵', matchScenes: ['F2-morning-quarrel'], icon: 'star' },
+      { id: 'bishop', label: '主教', matchScenes: ['F1-fox', 'F2-Bishop'], icon: 'star' },
+      { id: 'quarrel', label: '争吵', matchScenes: ['F3-Quarrel'], icon: 'star' },
       { id: 'door', label: '开门', matchScenes: ['F8-openthedoor'], icon: 'star' },
-      { id: 'night', label: '夜晚', matchScenes: ['F30-NightScene', 'act1-p4-night'], icon: 'moon' },
-      { id: 'knight', label: '册封', matchScenes: ['F18-Knighting'], icon: 'star' },
-      { id: 'ending', label: '结局', matchScenes: ['Ending', 'F41-FinalDecision'], icon: 'star' },
-      { id: 'day2', label: '第二天', matchScenes: ['act1-day2', 'F29-AutoKnight'], icon: 'star' }
+      { id: 'night', label: '夜晚', matchScenes: ['F14-NightActions'], icon: 'moon' },
+      { id: 'knight', label: '册封', matchScenes: ['F30-KnightCeremony', 'F29-AutoKnight'], icon: 'star' },
+      { id: 'ending', label: '结局', matchScenes: ['ENDING_'], icon: 'star' },
+      { id: 'departure', label: '启程', matchScenes: ['F41-LeaveWithFain', 'F40-LeaveWithoutFain'], icon: 'star' }
     ],
-    mapFocus: { x: -300, y: -200, scale: 1.8 }, // Emerald Valley focus
+    mapFocus: { x: -300, y: -200, scale: 1.8 },
     regionLabels: ['翠谷 · Verdant Vale'],
     highlightLocations: ['creekwood_castle', 'grove_village', 'lancani_falls']
-  },
-  {
-    id: 'act1-fox-cont',
-    roadId: 'fox',
-    number: 'CAPVT I',
-    title: '红狐的低语',
-    subtitle: 'WHISPERS OF THE CRIMSON FOX',
-    description: '狐影摇曳在月光下的森林。当谎言被包裹在真相之中，谁才是真正的猎人？',
-    icon: Leaf,
-    color: 'emerald',
-    startSceneId: 'start', // Placeholder
-    mapFocus: { x: -300, y: -200, scale: 1.8 },
-    highlightLocations: ['grove_village']
   },
   {
     id: 'act2',
@@ -99,7 +86,7 @@ export const CHAPTERS_CONFIG = [
       { id: 'welcome', label: '欢迎', matchScenes: ['F53-1-Welcome', 'F54-ArchbishopWords'], icon: 'star' },
       { id: 'farewell', label: '别离', matchScenes: ['F55-FarewellValley'], icon: 'star' }
     ],
-    mapFocus: { x: 50, y: 150, scale: 2.2 }, // Capital focus
+    mapFocus: { x: 50, y: 150, scale: 2.2 },
     regionLabels: ['中央河间地 · Riverlands'],
     highlightLocations: [
       'kase_city', 
@@ -112,6 +99,84 @@ export const CHAPTERS_CONFIG = [
       'reg_north', 
       'holy_spring'
     ]
+  },
+  {
+    id: 'act3',
+    roadId: 'fox',
+    number: 'CAPVT II',
+    title: '红狐的低语',
+    subtitle: 'WHISPERS OF THE CRIMSON FOX',
+    description: '狐影摇曳在月光下的森林。当谎言被包裹在真相之中，谁才是真正的猎人？',
+    icon: Leaf,
+    color: 'emerald',
+    startSceneId: 'start',
+    mapFocus: { x: -300, y: -200, scale: 1.8 },
+    highlightLocations: ['grove_village']
+  },
+  {
+    id: 'act4',
+    roadId: 'fox',
+    number: 'CAPVT III',
+    title: '待续之章',
+    subtitle: 'TO BE CONTINUED',
+    description: '命运的丝线仍在交织，更多的故事等待在未来的迷雾中揭晓。',
+    icon: Shield,
+    color: 'neutral',
+    startSceneId: 'start',
+    mapFocus: { x: 0, y: 0, scale: 1 },
+    highlightLocations: []
+  },
+  {
+    id: 'act5',
+    roadId: 'fox',
+    number: 'CAPVT IV',
+    title: '待续之章',
+    subtitle: 'TO BE CONTINUED',
+    description: '命运的丝线仍在交织，更多的故事等待在未来的迷雾中揭晓。',
+    icon: Shield,
+    color: 'neutral',
+    startSceneId: 'start',
+    mapFocus: { x: 0, y: 0, scale: 1 },
+    highlightLocations: []
+  },
+  {
+    id: 'act6',
+    roadId: 'fox',
+    number: 'CAPVT V',
+    title: '待续之章',
+    subtitle: 'TO BE CONTINUED',
+    description: '命运的丝线仍在交织，更多的故事等待在未来的迷雾中揭晓。',
+    icon: Shield,
+    color: 'neutral',
+    startSceneId: 'start',
+    mapFocus: { x: 0, y: 0, scale: 1 },
+    highlightLocations: []
+  },
+  {
+    id: 'act7',
+    roadId: 'fox',
+    number: 'CAPVT VI',
+    title: '待续之章',
+    subtitle: 'TO BE CONTINUED',
+    description: '命运的丝线仍在交织，更多的故事等待在未来的迷雾中揭晓。',
+    icon: Shield,
+    color: 'neutral',
+    startSceneId: 'start',
+    mapFocus: { x: 0, y: 0, scale: 1 },
+    highlightLocations: []
+  },
+  {
+    id: 'act8',
+    roadId: 'fox',
+    number: 'CAPVT VII',
+    title: '待续之章',
+    subtitle: 'TO BE CONTINUED',
+    description: '命运的丝线仍在交织，更多的故事等待在未来的迷雾中揭晓。',
+    icon: Shield,
+    color: 'neutral',
+    startSceneId: 'start',
+    mapFocus: { x: 0, y: 0, scale: 1 },
+    highlightLocations: []
   },
   {
     id: 'act1-deer',
