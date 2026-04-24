@@ -66,7 +66,7 @@ export const Day1ScholarScenes: Record<string, Scene> = {
       {
         text: '“米瑞斯的马雷竟然是我的红袍卫士。”',
         nextSceneId: 'F91-MaresDetail',
-        condition: (state) => !!state.flags.askedMaresBefore,
+        condition: (state) => !!state.flags['已在近郊场景里询问过米瑞斯'],
         onSelect: (state) => {
           state.flags.askedMaresInScholarTalk = true;
         }
@@ -74,7 +74,7 @@ export const Day1ScholarScenes: Record<string, Scene> = {
       {
         text: '“我的姑姑伊瑟尔迪丝公主是因为黄金骑士才去修道院的吗？”',
         nextSceneId: 'F92-GoldenKnightDetail',
-        condition: (state) => !!state.flags.askedGoldenKnightReason,
+        condition: (state) => !!state.flags['已在远望修道院选择问原因'],
         onSelect: (state) => {
           state.flags.askedGoldenKnightInScholarTalk = true;
         }
@@ -112,7 +112,7 @@ export const Day1ScholarScenes: Record<string, Scene> = {
       },
       {
         text: '“我还听说他脾气很坏，对男人也很挑剔......”',
-        condition: (state) => !!state.flags.askedHammondTraitBefore,
+        condition: (state) => !!state.flags['已在近郊场景里询问过哈蒙德'],
         nextSceneId: 'F90-HammondDeep'
       }
     ]
@@ -233,8 +233,8 @@ export const Day1ScholarScenes: Record<string, Scene> = {
       const talkCount = state.sessionFlags.talkCount || 0;
       
       const HammondAvailable = !state.flags.askedHammondInScholarTalk;
-      const MaresAvailable = !state.flags.askedMaresInScholarTalk && !!state.flags.askedMaresBefore;
-      const GoldenKnightAvailable = !state.flags.askedGoldenKnightInScholarTalk && !!state.flags.askedGoldenKnightReason;
+      const MaresAvailable = !state.flags.askedMaresInScholarTalk && !!state.flags['已在近郊场景里询问过米瑞斯'];
+      const GoldenKnightAvailable = !state.flags.askedGoldenKnightInScholarTalk && !!state.flags['已在远望修道院选择问原因'];
       const CouncilAvailable = !state.flags.askedCouncilInScholarTalk;
 
       const hasMoreOptions = HammondAvailable || MaresAvailable || GoldenKnightAvailable || CouncilAvailable;
@@ -263,12 +263,12 @@ export const Day1ScholarScenes: Record<string, Scene> = {
       {
         text: '马雷的长子竟然是我的红袍卫士',
         nextSceneId: 'F91-MaresDetail',
-        condition: (state) => !state.flags.askedMaresInScholarTalk && !!state.flags.askedMaresBefore
+        condition: (state) => !state.flags.askedMaresInScholarTalk && !!state.flags['已在近郊场景里询问过米瑞斯']
       },
       {
         text: '我听说了我姑姑和黄金骑士的事',
         nextSceneId: 'F92-GoldenKnightDetail',
-        condition: (state) => !state.flags.askedGoldenKnightInScholarTalk && !!state.flags.askedGoldenKnightReason
+        condition: (state) => !state.flags.askedGoldenKnightInScholarTalk && !!state.flags['已在远望修道院选择问原因']
       },
       {
         text: '今天早上，我还去了御前会议',

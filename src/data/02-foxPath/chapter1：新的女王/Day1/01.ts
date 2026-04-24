@@ -103,7 +103,7 @@ export const act2Scenes: Record<string, Scene> = {
       { text: '“有两种说法。”她说，“伊瑟尔迪丝殿下曾经结过婚，后来也是因为婚姻，才进的修道院。”' }
     ],
     choices: [
-      { text: '“她曾经结过婚？”', nextSceneId: 'F59-KarimMarriage' },
+      { text: '“她曾经结过婚？”', nextSceneId: 'F59-KarimMarriage', setFlags: { '已在远望修道院选择问原因': true } },
       { text: '“也是因为婚姻？”', nextSceneId: 'F60-GoldenKnightRumor', setFlags: { '已在远望修道院选择问原因': true } }
     ]
   },
