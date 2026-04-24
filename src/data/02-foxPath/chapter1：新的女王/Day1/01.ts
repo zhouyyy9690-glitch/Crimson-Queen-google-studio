@@ -51,8 +51,8 @@ export const act2Scenes: Record<string, Scene> = {
       { text: '三个少女都停了下来，齐刷刷看着你。三双一模一样的栗棕色眼睛，映出六个好奇的你：' }
     ],
     choices: [
-      { text: '“乔治·哈蒙德的脾气很糟糕吗？”', nextSceneId: 'F56-HammondTopic', setFlags: { '已在近郊场景里询问过哈蒙德': true } },
-      { text: '“米瑞斯是怎样的地方？”', nextSceneId: 'F57-MaresAndMireis', setFlags: { '已在近郊场景里询问过米瑞斯': true } },
+      { text: '“乔治·哈蒙德的脾气很糟糕吗？”', nextSceneId: 'F56-HammondTopic', setFlags: { askedHammondInSuburbs: true } },
+      { text: '“米瑞斯是怎样的地方？”', nextSceneId: 'F57-MaresAndMireis', setFlags: { askedMireisInSuburbs: true } },
       { text: '“阿尔摩恩大公很少来凯斯吗？”', nextSceneId: 'F58-BearFamilyRumor' }
     ]
   },
@@ -103,8 +103,8 @@ export const act2Scenes: Record<string, Scene> = {
       { text: '“有两种说法。”她说，“伊瑟尔迪丝殿下曾经结过婚，后来也是因为婚姻，才进的修道院。”' }
     ],
     choices: [
-      { text: '“她曾经结过婚？”', nextSceneId: 'F59-KarimMarriage', setFlags: { '已在远望修道院选择问原因': true } },
-      { text: '“也是因为婚姻？”', nextSceneId: 'F60-GoldenKnightRumor', setFlags: { '已在远望修道院选择问原因': true } }
+      { text: '“她曾经结过婚？”', nextSceneId: 'F59-KarimMarriage', setFlags: { askedAuntPreviousMarriage: true } },
+      { text: '“也是因为婚姻？”', nextSceneId: 'F60-GoldenKnightRumor', setFlags: { askedGoldenKnightReason: true } }
     ]
   },
 

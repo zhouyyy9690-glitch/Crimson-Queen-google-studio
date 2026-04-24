@@ -38,26 +38,11 @@ export const Day1ScholarScenes: Record<string, Scene> = {
       { text: '你急忙推开门，那个你认识了十四年的灰袍老人正对你露出他那标志性的微笑。一看到这个，你的鼻子就发酸了。' },
       { text: '“你好啊，我的小殿下。”' },
       { text: '门在你身后重重关上，塞普迪莫斯学士接住扑到他怀里的你，拍了拍你的背。' },
-      { text: '“您去哪了？”你有好多好多问题想问他，“修女不见了！我不知道她在哪，芬因去了红袍塔，还有哈蒙德！学士，我......”' },
-      { text: '“慢慢来，小凯瑟琳。”他拨了拨胸前的铁环，你从他身上起来，乖乖坐在椅子上。' },
-      { text: '“玛格丽特修女从进城之后就不见了，我一个人吃了午饭。”你有些委屈，“芬因......芬和大骑士去了红袍塔，现在他们都没有回来。我上午去了御前会议，我见到哈蒙德、奥尔德斯、还有莫尔......”' },
-      { text: '你恨不得将一上午的所有事都告诉他，话到嘴边，却急的不知道先说哪件事才好。学士铜色的眼睛沉静而睿智地看着你，你慢慢闭上嘴，只是撇了撇嘴巴。' },
-      { text: '“您怎么在这？”你问，“您......您为什么会到红堡里来？”' },
-      { text: '“尽管您已经有了王室学士，但我仍然认为，您在接下来的几天里需要我的知识。”他有些促狭地眨眨眼，“是不是啊，小凯瑟琳？”' },
-      { text: '当然！当然！他说得对极了！', isThought: true },
-      { text: '一看到接下来几天都能和学士见面，你终于笑了起来。这恐怕是你从进城以来的第一个微笑。' },
-      { text: '“我想每天下午都见到您。”你央求道，“学士，您能每天下午这个时间在书房吗？”' },
-      { text: '“当然了，小殿下。”他说，“您只需要让韦斯特女官长向威斯汀卫队长说一声就行了。”' },
-      { text: '“威斯汀？”' },
-      { text: '“托马斯·威斯汀，他是王宫卫队的队长。”塞普迪莫斯学士指了指门外，“也就是您 看到的那些穿金红罩袍的卫士，他们都是王宫侍卫。”' },
-      { text: '你点点头。' },
-      { text: '“但我恐怕不能在这里待太久，公主殿下。”塞普迪莫斯学士翻开桌上的书，他的目光垂在书页上，“您这几天最重要的事是典礼彩排，我们只能待一小会儿。”' },
-      { text: '一小会儿也好。你接受了。' },
-      { text: '“学士，我想问......”' }
+      { text: '“您去哪了？”你有好多话想问，好多委屈想说，但最后只是化为一个深呼吸。' }
     ],
     choices: [
       {
-        text: '“乔治·哈蒙德到底是怎样的男人？”',
+        text: '“我想了解那个叫乔治·哈蒙德的男人。”',
         nextSceneId: 'F89-HammondDetail',
         onSelect: (state) => {
           state.flags.askedHammondInScholarTalk = true;
@@ -66,7 +51,7 @@ export const Day1ScholarScenes: Record<string, Scene> = {
       {
         text: '“米瑞斯的马雷竟然是我的红袍卫士。”',
         nextSceneId: 'F91-MaresDetail',
-        condition: (state) => !!state.flags['已在近郊场景里询问过米瑞斯'],
+        condition: (state) => !!state.flags.askedMireisInSuburbs,
         onSelect: (state) => {
           state.flags.askedMaresInScholarTalk = true;
         }
@@ -74,7 +59,7 @@ export const Day1ScholarScenes: Record<string, Scene> = {
       {
         text: '“我的姑姑伊瑟尔迪丝公主是因为黄金骑士才去修道院的吗？”',
         nextSceneId: 'F92-GoldenKnightDetail',
-        condition: (state) => !!state.flags['已在远望修道院选择问原因'],
+        condition: (state) => !!state.flags.askedGoldenKnightReason,
         onSelect: (state) => {
           state.flags.askedGoldenKnightInScholarTalk = true;
         }
@@ -93,7 +78,7 @@ export const Day1ScholarScenes: Record<string, Scene> = {
     id: 'F89-HammondDetail',
     title: '哈蒙德',
     paragraphs: [
-      { text: '“他是个不好对付的男人。”塞普迪莫斯学士看着你，“征服王国西境大公爵，财政大臣兼御前首相，他在您的父亲，先王劳顿陛下四十三岁的时候就成了财政大臣。三年后，他成为御前首相。”' },
+      { text: '“他是个不好对付的男人。”塞普迪莫斯学士看着你，“征服王国西境大公爵，财政大臣兼御前首相，他在您的父亲，先王劳顿陛下四十三岁的时候就成了财政大臣。三年后， he 成为御前首相。”' },
       { text: '“他从我的父亲开始，就是王国的财政大臣吗？”' },
       { text: '“是啊，他手里握着整个西境，年税金是整个的国库的一半。”塞普迪莫斯学士说，“西境沿海的众多城市自古以来被称为银岸诸城，其中最核心的有四座。您还记得是哪四座吗？”' },
       { text: '你努力回忆着，“维利斯、米瑞斯、洛安......”' },
@@ -112,7 +97,7 @@ export const Day1ScholarScenes: Record<string, Scene> = {
       },
       {
         text: '“我还听说他脾气很坏，对男人也很挑剔......”',
-        condition: (state) => !!state.flags['已在近郊场景里询问过哈蒙德'],
+        condition: (state) => !!state.flags.askedHammondInSuburbs,
         nextSceneId: 'F90-HammondDeep'
       }
     ]
@@ -136,6 +121,9 @@ export const Day1ScholarScenes: Record<string, Scene> = {
         text: '继续',
         nextSceneId: 'F94-ConditionCheck',
         onSelect: (state) => {
+          // F90 是 F89 的延伸，这里同样触发 talkCount + 1 (代表完成哈蒙德话题)
+          // 逻辑：如果从 F89 直接跳到 F94，Count+1；如果进了 F90 再跳 F94，Count+1。
+          // 两个分支最终都只增加 1 次。
           state.sessionFlags.talkCount = (state.sessionFlags.talkCount || 0) + 1;
         }
       }
@@ -148,7 +136,7 @@ export const Day1ScholarScenes: Record<string, Scene> = {
     paragraphs: [
       { text: '“我都不敢相信。”你说，“米瑞斯的马雷竟然会是我的红袍卫士。”' },
       { text: '“您觉得贾斯珀·马雷如何？”' },
-      { text: '“冷冰冰的。”你回想着他的脸，“让我有点害怕。而且，他真的很高......”' },
+      { text: '“冷冰冰的。”你回想着防腐的脸，“让我有点害怕。而且，他真的很高......”' },
       { text: '塞普迪莫斯学士等待你说下去。' },
       { text: '“他比大骑士还要高，就是脸上有伤疤。如果没有那道疤，我觉得他会很不错。”' },
       { text: '学士笑了一声。“公主殿下，我向您担保，他的武艺和他本该拥有的长相一样好。”' },
@@ -233,8 +221,8 @@ export const Day1ScholarScenes: Record<string, Scene> = {
       const talkCount = state.sessionFlags.talkCount || 0;
       
       const HammondAvailable = !state.flags.askedHammondInScholarTalk;
-      const MaresAvailable = !state.flags.askedMaresInScholarTalk && !!state.flags['已在近郊场景里询问过米瑞斯'];
-      const GoldenKnightAvailable = !state.flags.askedGoldenKnightInScholarTalk && !!state.flags['已在远望修道院选择问原因'];
+      const MaresAvailable = !state.flags.askedMaresInScholarTalk && !!state.flags.askedMireisInSuburbs;
+      const GoldenKnightAvailable = !state.flags.askedGoldenKnightInScholarTalk && !!state.flags.askedGoldenKnightReason;
       const CouncilAvailable = !state.flags.askedCouncilInScholarTalk;
 
       const hasMoreOptions = HammondAvailable || MaresAvailable || GoldenKnightAvailable || CouncilAvailable;
@@ -263,12 +251,12 @@ export const Day1ScholarScenes: Record<string, Scene> = {
       {
         text: '马雷的长子竟然是我的红袍卫士',
         nextSceneId: 'F91-MaresDetail',
-        condition: (state) => !state.flags.askedMaresInScholarTalk && !!state.flags['已在近郊场景里询问过米瑞斯']
+        condition: (state) => !state.flags.askedMaresInScholarTalk && !!state.flags.askedMireisInSuburbs
       },
       {
         text: '我听说了我姑姑和黄金骑士的事',
         nextSceneId: 'F92-GoldenKnightDetail',
-        condition: (state) => !state.flags.askedGoldenKnightInScholarTalk && !!state.flags['已在远望修道院选择问原因']
+        condition: (state) => !state.flags.askedGoldenKnightInScholarTalk && !!state.flags.askedGoldenKnightReason
       },
       {
         text: '今天早上，我还去了御前会议',
