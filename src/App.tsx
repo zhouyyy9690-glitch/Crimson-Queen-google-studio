@@ -460,7 +460,12 @@ export default function App() {
     // - 优先级：显式设置 (music/ambience/bgm) > 章节默认主题 (getChapterTheme)
     const musicUrl = scene.music;
     const ambienceUrl = scene.ambience;
-    let bgmUrl = scene.bgm || SCENE_BGM_CONFIG[currentSceneId];
+    let bgmValue = scene.bgm || SCENE_BGM_CONFIG[currentSceneId];
+    
+    // 如果 bgmValue 是 BGM_ASSETS 中的一个键，则获取对应的 URL
+    let bgmUrl = (bgmValue && BGM_ASSETS[bgmValue as keyof typeof BGM_ASSETS]) 
+      ? BGM_ASSETS[bgmValue as keyof typeof BGM_ASSETS] 
+      : bgmValue;
     
     // 如果没有显示设置任何音频轨道，则回退到章节主题曲
     if (!bgmUrl && !musicUrl && !ambienceUrl) {
