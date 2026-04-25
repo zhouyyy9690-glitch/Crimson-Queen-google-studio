@@ -72,7 +72,7 @@ export const day1ScenesPart9: Record<string, Scene> = {
       { text: '“走吧。”' }
     ],
     choices: [
-      { text: '继续', nextSceneId: 'Act2ChapterSplash' }
+      { text: '继续', nextSceneId: 'F103-1-withRoderickThorn' }
     ]
   },
 
@@ -88,7 +88,7 @@ export const day1ScenesPart9: Record<string, Scene> = {
       { text: '“走吧。”' }
     ],
     choices: [
-      { text: '继续', nextSceneId: 'Act2ChapterSplash' }
+      { text: '继续', nextSceneId: 'F103-2-withCorbinMide' }
     ]
   }
 };

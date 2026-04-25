@@ -106,7 +106,7 @@ export default function App() {
   // 当前文本段落索引
   const [currentParaIndex, setCurrentParaIndex] = useState(0);
   // 当前选择的动物路径（狐狸、鹿、鹰）
-  const [currentPath, setCurrentPath] = useState<'fox' | 'deer' | 'eagle' | null>(null);
+  const [currentPath, setCurrentPath] = useState<'fox' | 'deer' | 'eagle' | 'destiny' | null>(null);
   // 剧情旗标（Flags）：存储玩家的选择和触发的事件，影响后续剧情
   const [flags, setFlags] = useState<Record<string, any>>({});
   // 会话旗标（Session Flags）：存储本次游戏运行时的临时状态，不一定持久化
