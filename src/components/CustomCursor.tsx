@@ -59,7 +59,7 @@ const CustomCursor = () => {
 
   return (
     <motion.div
-      className="fixed top-0 left-0 pointer-events-none z-[9999] hidden lg:block"
+      className="fixed top-0 left-0 pointer-events-none z-[10001] hidden lg:block"
       style={{
         x: cursorX,
         y: cursorY,

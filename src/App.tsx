@@ -36,7 +36,7 @@ import {
   Music
 } from 'lucide-react';
 import { gameData } from './gameData';
-import { commonScenes } from './data/01-commonScenes';
+import { commonScenes } from './data/sceneManifest';
 import { Scene, Stage, Choice, Character, Location as GameLocation, Paragraph, TextSegment, ParticleType, Insight } from './types';
 import { characters } from './characters';
 import { locations } from './locations';
@@ -61,6 +61,14 @@ import { GameHeader } from './components/GameHeader';
 import { GameFooter } from './components/GameFooter';
 import { IntroScreen } from './components/IntroScreen';
 import { ICPFooter } from './components/ICPFooter';
+import { DebugPanel } from './components/DebugPanel';
+import { BackgroundLayers } from './components/BackgroundLayers';
+import { ChoiceExplanationOverlay } from './components/ChoiceExplanationOverlay';
+import { SystemOverlays } from './components/SystemOverlays';
+import { parseTextWithDialogue, determineParticleType } from './lib/narrative-utils';
+import { audioManager } from './lib/audio-manager';
+import { assetLoader } from './lib/asset-loader';
+import { DEBUG_CONFIG } from './config/debug';
 import ParticleBackground from './components/ParticleBackground';
 import CustomCursor from './components/CustomCursor';
 
@@ -132,17 +140,62 @@ export default function App() {
   const [bgmVolume, setBgmVolume] = useState(0.4);
   const [sfxVolume, setSfxVolume] = useState(0.3);
   const [showVolumeMixer, setShowVolumeMixer] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [showIntro, setShowIntro] = useState(!isTestMode); // 测试模式下默认跳过开场动画
 
-  // 引用管理：音频实例与通知计时器
-  const mainAudioRef = useRef<HTMLAudioElement | null>(null);
-  const ambienceAudioRef = useRef<HTMLAudioElement | null>(null);
-  const musicAudioRef = useRef<HTMLAudioElement | null>(null);
-
-  // 核心状态：多重通知队列
+  // 引用管理：通知计时器
   const [notifications, setNotifications] = useState<{id: string, title: string, type: 'ending' | 'character' | 'location' | 'insight'}[]>([]);
   const lastNotificationRef = useRef<{time: number, type: string, title: string}[]>([]);
+
+  // --- 调试快捷键监听 ---
+  useEffect(() => {
+    if (!DEBUG_CONFIG.ALLOW_DEBUG) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key.toLowerCase() === DEBUG_CONFIG.SHORTCUT.key && 
+        (e.ctrlKey || e.metaKey) // 支持 Ctrl 或 Command
+      ) {
+        e.preventDefault();
+        setShowDebug(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // --- 场景与阶段计算 (Derived States) ---
+  const currentScene: Scene = useMemo(() => gameData.scenes[currentSceneId] || gameData.scenes[gameData.initialScene], [currentSceneId]);
+  const currentStage: Stage | null = useMemo(() => (currentScene.event && currentStageId) 
+    ? currentScene.event.stages[currentStageId] 
+    : null, [currentScene, currentStageId]);
+
+  // --- 音频管理器逻辑同步 ---
+  // 同步音量设置
+  useEffect(() => {
+    audioManager.setBaseVolume(bgmVolume);
+  }, [bgmVolume]);
+
+  // 背景音乐平滑切换：当剧情要求的背景音乐 ID 或资源变化时触发
+  useEffect(() => {
+    if (!isLoaded) return;
+    
+    const finalUrl = currentScene.music || currentScene.ambience || (currentScene.bgm ? (BGM_ASSETS[currentScene.bgm as keyof typeof BGM_ASSETS] || currentScene.bgm) : null) || getChapterTheme(currentSceneId);
+
+    if (finalUrl && hasInteracted && !isMuted) {
+      audioManager.play(finalUrl, 2000); 
+    } else {
+      audioManager.stop(1500);
+    }
+  }, [currentSceneId, hasInteracted, isMuted, currentScene.bgm, currentScene.music, currentScene.ambience, isLoaded]);
+
+  // 资源预加载逻辑：每当场景切换时，预测并加载后续可能的图片资源
+  useEffect(() => {
+    if (!isLoaded) return;
+    assetLoader.preloadNextAssets(gameData.scenes, currentSceneId);
+  }, [currentSceneId, isLoaded]);
 
   // 触发全局通知（解锁角色/地点等）
   const triggerNotification = (title: string, type: 'ending' | 'character' | 'location' | 'insight') => {
@@ -193,25 +246,7 @@ export default function App() {
     };
   }, [hasInteracted]);
 
-  // 极简初始化：确保 Audio 实例在组件生命周期内唯一且尽早创建
-  useEffect(() => {
-    if (typeof Audio !== 'undefined') {
-      if (!mainAudioRef.current) {
-        mainAudioRef.current = new Audio();
-        mainAudioRef.current.loop = true;
-      }
-      if (!ambienceAudioRef.current) {
-        ambienceAudioRef.current = new Audio();
-        ambienceAudioRef.current.loop = true;
-      }
-      if (!musicAudioRef.current) {
-        musicAudioRef.current = new Audio();
-        musicAudioRef.current.loop = true;
-      }
-    }
-  }, []);
-
-  // Selection & Explanation States
+  // 选择与解释状态
   const [selectedChoice, setSelectedChoice] = useState<Choice | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
 
@@ -452,128 +487,11 @@ export default function App() {
     setVisitedTexts(prev => [...prev, `--- ${scene.title} ---`]);
   }, [currentSceneId]);
 
-  // 分层音频管理：处理场景切换时的平滑过渡（独占优先级模式）
-  useEffect(() => {
-    const scene = gameData.scenes[currentSceneId];
-    if (!scene) return;
-
-    // 2. 核心 BGM 抉择逻辑：
-    // - 优先级：显式设置 (music/ambience/bgm) > 章节默认主题 (getChapterTheme)
-    const musicUrl = scene.music;
-    const ambienceUrl = scene.ambience;
-    let bgmValue = scene.bgm || SCENE_BGM_CONFIG[currentSceneId];
-    
-    // 如果 bgmValue 是 BGM_ASSETS 中的一个键，则获取对应的 URL
-    let bgmUrl = (bgmValue && BGM_ASSETS[bgmValue as keyof typeof BGM_ASSETS]) 
-      ? BGM_ASSETS[bgmValue as keyof typeof BGM_ASSETS] 
-      : bgmValue;
-    
-    // 如果没有显示设置任何音频轨道，则回退到章节主题曲
-    if (!bgmUrl && !musicUrl && !ambienceUrl) {
-      bgmUrl = getChapterTheme(currentSceneId);
-    }
-
-    const manageExclusiveLayer = async (targetRef: MutableRefObject<HTMLAudioElement | null>, url: string | undefined, defaultVolume: number) => {
-      const audio = targetRef.current;
-      if (!audio) return false;
-
-      const normalizedTarget = url ? new URL(url, window.location.href).href : '';
-      const normalizedCurrent = audio.src ? new URL(audio.src, window.location.href).href : '';
-
-      if (normalizedTarget && normalizedCurrent === normalizedTarget) {
-        if (audio.paused && hasInteracted && !isMuted) {
-          audio.play().catch(() => {});
-          fadeAudio(audio, defaultVolume, 1000);
-        }
-        return true; 
-      }
-
-      if (normalizedTarget) {
-        audio.pause();
-        audio.src = url!;
-        audio.load();
-        audio.loop = true;
-        audio.volume = 0;
-        if (hasInteracted && !isMuted) {
-          try {
-            await audio.play();
-            fadeAudio(audio, defaultVolume, 1000);
-          } catch(e) { console.error("Layer switch failed", e); }
-        }
-        return true;
-      }
-      return false;
-    };
-
-    const stopLayer = (ref: MutableRefObject<HTMLAudioElement | null>) => {
-      const audio = ref.current;
-      if (audio && !audio.paused) {
-        fadeAudio(audio, 0, 500);
-        setTimeout(() => {
-          // 再次检查此时是否真的不需要该轨道，防止快速切换导致误删
-          audio.pause();
-          audio.src = '';
-        }, 500);
-      }
-    };
-
-    // 执行优先级逻辑：只会有一个物理轨道处于激活状态
-    if (musicUrl) {
-      manageExclusiveLayer(musicAudioRef, musicUrl, bgmVolume * 1.1);
-      stopLayer(ambienceAudioRef);
-      stopLayer(mainAudioRef);
-    } else if (ambienceUrl) {
-      manageExclusiveLayer(ambienceAudioRef, ambienceUrl, bgmVolume * 0.8);
-      stopLayer(musicAudioRef);
-      stopLayer(mainAudioRef);
-    } else if (bgmUrl) {
-      manageExclusiveLayer(mainAudioRef, bgmUrl, bgmVolume);
-      stopLayer(musicAudioRef);
-      stopLayer(ambienceAudioRef);
-    } else {
-      stopLayer(mainAudioRef);
-      stopLayer(ambienceAudioRef);
-      stopLayer(musicAudioRef);
-    }
-  }, [currentSceneId, hasInteracted, isMuted, bgmVolume]);
-
-  // Handle Global Mute/Unmute
-  useEffect(() => {
-    const audios = [mainAudioRef.current, ambienceAudioRef.current, musicAudioRef.current];
-    audios.forEach(audio => {
-      if (!audio) return;
-      if (hasInteracted && !isMuted) {
-        audio.muted = false;
-      } else {
-        audio.muted = true;
-      }
-    });
-  }, [hasInteracted, isMuted]);
-
+  // --- 场景生命周期与音频管理已在上方统一处理 ---
   useEffect(() => {
     setCurrentParaIndex(0);
   }, [currentSceneId, currentStageId]);
 
-  useEffect(() => {
-    const handleGlobalClick = () => {
-      setHasInteracted(true);
-      const audios = [mainAudioRef.current, ambienceAudioRef.current, musicAudioRef.current];
-      if (!isMuted) {
-        audios.forEach(audio => {
-          if (audio && audio.src) {
-            audio.play().catch(() => {});
-          }
-        });
-      }
-    };
-    window.addEventListener('click', handleGlobalClick);
-    return () => window.removeEventListener('click', handleGlobalClick);
-  }, [isMuted]);
-
-  const currentScene: Scene = gameData.scenes[currentSceneId] || gameData.scenes[gameData.initialScene];
-  const currentStage: Stage | null = (currentScene.event && currentStageId) 
-    ? currentScene.event.stages[currentStageId] 
-    : null;
 
   const checkCondition = (condition?: any): boolean => {
     if (!condition) return true;
@@ -934,103 +852,14 @@ export default function App() {
 
   // Clear newly unlocked highlights when moving to next paragraph or scene handled in main effect above
 
-  const renderTextWithDialogue = (text: string, isThought?: boolean): TextSegment[] => {
-    // 1. First split by dialogue markers
-    const parts = text.split(/([“”""][^“”""]*[“”""])/g);
-    const segments: TextSegment[] = [];
-    
-    parts.forEach((part) => {
-      if (!part) return;
+  // --- 叙事工具函数与环境判定 ---
+  // 已移至 src/lib/narrative-utils.ts
+  const renderTextWithDialogue = (text: string, isThought?: boolean) => parseTextWithDialogue(text, isThought);
 
-      const isDialoguePart = part.match(/^[“”""]/);
-      
-      // 2. Process Manual Highlighting Tags within both narrative and dialogue
-      // Pattern: [C:Name] or [C：Name] for Characters, [L:Location] or [L：Location] for Locations
-      const tagParts = part.split(/(\[C[:：][^\]]+\]|\[L[:：][^\]]+\])/g);
-      
-      tagParts.forEach(tagPart => {
-        if (!tagPart) return;
-
-        if (tagPart.startsWith('[C') && tagPart.endsWith(']')) {
-          // Character Manual Highlight
-          const name = tagPart.substring(3, tagPart.length - 1);
-          segments.push({
-            text: name,
-            className: "text-amber-600 font-bold",
-            isDialogue: !!isDialoguePart
-          });
-        } else if (tagPart.startsWith('[L') && tagPart.endsWith(']')) {
-          // Location Manual Highlight
-          const locName = tagPart.substring(3, tagPart.length - 1);
-          segments.push({
-            text: locName,
-            className: "text-emerald-500 font-bold",
-            isDialogue: !!isDialoguePart
-          });
-        } else {
-          // Normal segment (either dialogue or narrative)
-          if (isDialoguePart) {
-            segments.push({
-              text: tagPart,
-              className: "text-amber-100/90 font-dialogue drop-shadow-[0_0_5px_rgba(251,191,36,0.2)]",
-              isDialogue: true
-            });
-          } else {
-            segments.push({
-              text: tagPart,
-              className: isThought 
-                ? "text-rose-400/90 font-serif italic font-medium tracking-wide" 
-                : "text-neutral-400 font-serif",
-              isDialogue: false
-            });
-          }
-        }
-      });
-    });
-
-    return segments;
-  };
-
-  // 环境光效/粒子效果管理：根据地理位置、时间、特定剧情决定背景粒子 (尘埃、雪、夕阳、萤火虫)
-  const currentParticleType = useMemo(() => {
-    // 1. Manually check specific ranges/IDs requested by user
-    if (currentScene.isEnding) return 'none'; // User requested act1 endings to be none
-
-    const scenesToNature = [
-      'ForgottenPrincess-kill', 'ForgottenPrincess-kill1',
-      'MoonlightEscape-kill', 'MoonlightEscape-kill1',
-      'LegendoftheGreenValley-kill', 'LegendoftheGreenValley-kill2'
-    ];
-    if (scenesToNature.includes(currentSceneId)) return 'nature';
-
-    // Handle ranges for Fox Path (F2-F12, F13, F14-F39, F41)
-    if (currentSceneId.startsWith('F')) {
-      // Regex to extract the number after 'F'
-      const match = currentSceneId.match(/^F(\d+)/);
-      if (match) {
-        const num = parseInt(match[1]);
-        if (num >= 2 && num <= 12) return 'dust'; // Daylight
-        if (num === 13) return 'evening'; // Evening Transition
-        if (num >= 14 && num <= 39) return 'nature'; // Night (Fireflies)
-        if (num >= 41) return 'dust'; // Leave with Fain / Day again
-      }
-    }
-
-    // 2. Default heuristic logic
-    if (currentScene.particleType) return currentScene.particleType;
-    if (Object.keys(commonScenes).includes(currentSceneId)) return 'none';
-    
-    const allParagraphsText = currentScene.paragraphs?.map(p => p.text).join(' ') || '';
-    const searchSpace = (currentSceneId + ' ' + currentScene.title + ' ' + currentScene.description + ' ' + allParagraphsText).toLowerCase();
-    
-    if (searchSpace.includes('北境') || searchSpace.includes('雪') || searchSpace.includes('高原')) return 'snow';
-    if (searchSpace.includes('王城') || searchSpace.includes('凯斯') || searchSpace.includes('贤者堡') || searchSpace.includes('大教堂')) return 'dust';
-    
-    const isNight = searchSpace.includes('night') || searchSpace.includes('夜') || searchSpace.includes('今夜') || searchSpace.includes('深夜');
-    if (isNight && (searchSpace.includes('溪木堡') || searchSpace.includes('森林') || searchSpace.includes('翠谷') || searchSpace.includes('绿野'))) return 'nature';
-    
-    return 'none';
-  }, [currentScene, currentSceneId]);
+  const currentParticleType = useMemo(() => 
+    determineParticleType(currentSceneId, currentScene), 
+    [currentScene, currentSceneId]
+  );
 
   if (!isLoaded) return null;
 
@@ -1041,30 +870,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#d4d4d8] font-serif selection:bg-amber-900/40 overflow-x-hidden no-scrollbar lg:cursor-none">
-      {/* 自定义鼠标指针组件 */}
-      <CustomCursor />
-      
-      {/* 开场动画层 */}
-      <AnimatePresence>
-        {showIntro && (
-          <IntroScreen onComplete={() => setShowIntro(false)} />
-        )}
-      </AnimatePresence>
-
-      {/* 墨水失真与羊皮纸滤镜：通过 SVG filter 实现复古质感 */}
-      <svg style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}>
-        <filter id="ink-distortion">
-          <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="5" result="noise" />
-          <feDisplacementMap in="SourceGraphic" in2="noise" scale="15" />
-        </filter>
-      </svg>
-      {/* 全局背景纹理与阴影渐变 */}
-      <div className="fixed inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-20 pointer-events-none" />
-      <div className="fixed inset-0 bg-[url('https://www.transparenttextures.com/patterns/parchment.png')] opacity-15 pointer-events-none mix-blend-overlay" />
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0)_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none" />
-      
-      {/* 动态粒子背景：渲染尘埃、雪花或萤火虫 */}
-      <ParticleBackground type={currentParticleType} />
+      {/* 视觉背景层：处理鼠标、开场、粒子与滤镜 */}
+      <BackgroundLayers 
+        showIntro={showIntro}
+        setShowIntro={setShowIntro}
+        particleType={currentParticleType}
+      />
       
       <AnimatePresence>
         {currentScene.isEnding ? (
@@ -1133,17 +944,7 @@ export default function App() {
                   setHasInteracted(true);
                   resetGame();
                   setIsStarting(true);
-                  
-                  // 强制解锁音频：在用户点击的瞬间执行 play()
-                  const audios = [mainAudioRef.current, ambienceAudioRef.current, musicAudioRef.current];
-                  audios.forEach(audio => {
-                    if (audio && audio.src) {
-                      audio.muted = false;
-                      audio.play()
-                        .then(() => console.log("✅ 音频成功解锁"))
-                        .catch(e => console.log("❌ 仍然被拦截", e));
-                    }
-                  });
+                  console.log("✅ 玩家已交互，游戏启动");
                 }}
                 choices={activeChoices}
                 selectedChoice={selectedChoice}
@@ -1181,95 +982,44 @@ export default function App() {
           </AnimatePresence>
         </div>
 
-        {/* 选项解释弹窗：当玩家选择路径时，显示该选择的深层含义 */}
-        <AnimatePresence>
-          {showExplanation && selectedChoice && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-8 bg-[#0a0a0a]/90 backdrop-blur-md"
-            >
-              <div className="relative max-w-lg w-full p-8 md:p-12 border-2 border-amber-900/40 bg-[#0a0a0a] text-center overflow-hidden">
-                <AnimalPattern type={selectedChoice.animalType} />
-                <div className="relative z-10 space-y-6 md:space-y-8">
-                  <h3 className="font-display text-2xl md:text-3xl text-amber-600 tracking-[0.3em] uppercase">{selectedChoice.text}</h3>
-                  <div className="w-16 h-px bg-amber-900/40 mx-auto" />
-                  <p className="text-lg md:text-xl text-neutral-300 italic leading-relaxed">
-                    {selectedChoice.explanation}
-                  </p>
-                  <Button
-                    onClick={() => proceedWithChoice(selectedChoice)}
-                    className="mt-8 px-8 py-3 border border-amber-900/40 text-amber-700 hover:text-amber-500 hover:border-amber-700 uppercase tracking-widest text-xs"
-                  >
-                    Enter the Path
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* 选项解释弹窗 */}
+        <ChoiceExplanationOverlay 
+          show={showExplanation}
+          choice={selectedChoice}
+          onProceed={proceedWithChoice}
+        />
 
-        {/* 全局通知浮层：解锁角色、地点或传闻时的顶部提示 */}
-        <Notification notifications={notifications} />
-
-        {/* 结局画廊：查看已达成的所有剧情结局 */}
-        <EndingGallery 
+        {/* 系统各模块覆盖层（人物志、地图、设置等） */}
+        <SystemOverlays 
+          notifications={notifications}
           showGallery={showGallery}
           setShowGallery={setShowGallery}
           unlockedEndings={unlockedEndings}
-        />
-
-        {/* 存档界面遮罩：处理保存和加载进度 */}
-        <ProgressSave 
           showProgress={showProgress}
           setShowProgress={setShowProgress}
           loadGame={loadSaveData}
           manualSaveGame={manualSaveGame}
-        />
-
-        {/* 音量调音台遮罩 */}
-        <AnimatePresence>
-          {showVolumeMixer && (
-            <VolumeMixer 
-              bgmVolume={bgmVolume}
-              sfxVolume={sfxVolume}
-              onBgmChange={setBgmVolume}
-              onSfxChange={setSfxVolume}
-              onClose={() => setShowVolumeMixer(false)}
-            />
-          )}
-        </AnimatePresence>
-
-        <HistoryDisplay 
+          showVolumeMixer={showVolumeMixer}
+          setShowVolumeMixer={setShowVolumeMixer}
+          bgmVolume={bgmVolume}
+          sfxVolume={sfxVolume}
+          setBgmVolume={setBgmVolume}
+          setSfxVolume={setSfxVolume}
           showHistory={showHistory}
           setShowHistory={setShowHistory}
           visitedTexts={visitedTexts}
-        />
-
-        {/* 人物志：查看已解锁角色的背景与状态 */}
-        <AnimatePresence>
-          {showCompendium && (
-            <Compendium 
-              showCompendium={showCompendium}
-              setShowCompendium={setShowCompendium}
-              unlockedCharacters={unlockedCharacters}
-              characters={characters}
-              filteredCharacters={filteredCharacters}
-              selectedCharacter={selectedCharacter}
-              setSelectedCharacterId={setSelectedCharacterId}
-              history={history}
-              currentSceneId={currentSceneId}
-              flags={flags}
-            />
-          )}
-        </AnimatePresence>
-
-        <WorldMap 
+          showCompendium={showCompendium}
+          setShowCompendium={setShowCompendium}
+          unlockedCharacters={unlockedCharacters}
+          filteredCharacters={filteredCharacters}
+          selectedCharacter={selectedCharacter}
+          setSelectedCharacterId={setSelectedCharacterId}
+          history={history}
+          currentSceneId={currentSceneId}
+          flags={flags}
           showMap={showMap}
           setShowMap={setShowMap}
           unlockedLocations={unlockedLocations}
-          locations={locations}
           currentPath={currentPath}
           mapRef={mapRef}
           handleMapZoom={handleMapZoom}
@@ -1286,11 +1036,23 @@ export default function App() {
           mapObjectHeight={mapObjectHeight}
           mapObjectOpacity={mapObjectOpacity}
           mapObjectScale={mapObjectScale}
-          setSelectedLocationId={setSelectedLocationId}
           selectedLocationId={selectedLocationId}
+          setSelectedLocationId={setSelectedLocationId}
           selectedLocation={selectedLocation}
-          insights={insights}
           unlockedInsights={unlockedInsights}
+          showChapterSelect={showChapterSelect}
+          setShowChapterSelect={setShowChapterSelect}
+          unlockedChapters={unlockedChapters}
+          loadFromChapter={loadFromChapter}
+          resetAllProgress={resetAllProgress}
+          showDebug={showDebug}
+          setShowDebug={setShowDebug}
+          setCurrentSceneId={setCurrentSceneId}
+          setFlags={setFlags}
+          sessionFlags={sessionFlags}
+          setSessionFlags={setSessionFlags}
+          currentParaIndex={currentParaIndex}
+          setCurrentParaIndex={setCurrentParaIndex}
         />
 
         {/* 底部页脚：包含全局导航（人物志、地图）和游戏标题 */}
@@ -1303,21 +1065,6 @@ export default function App() {
           />
         )}
 
-        {/* 章节选择模态框：用于跨章节跳转 */}
-        <AnimatePresence>
-          {showChapterSelect && (
-            <ChapterSelectModal
-              unlockedChapters={unlockedChapters}
-              unlockedLocations={Array.from(unlockedLocations)}
-              unlockedInsights={unlockedInsights}
-              history={history}
-              onSelect={loadFromChapter}
-              onClose={() => setShowChapterSelect(false)}
-              onReset={resetAllProgress}
-            />
-          )}
-        </AnimatePresence>
-        
         <ICPFooter />
       </main>
     )}
