@@ -378,7 +378,7 @@ const RoadSelectionView = ({ onSelectRoad }: { onSelectRoad: (roadId: string) =>
                   }}
                   exit={{ opacity: 0, scale: 0.5 }}
                   transition={{ type: "spring", stiffness: 180, damping: 22 }}
-                  className={`absolute w-[260px] md:w-[320px] lg:w-[350px] max-h-[80vh] aspect-[1/1.6] flex flex-col pointer-events-${isCenter ? 'auto' : 'none'}`}
+                  className={`absolute w-auto h-[70vh] max-h-[480px] md:max-h-[550px] lg:max-h-[580px] aspect-[1/1.6] flex flex-col pointer-events-${isCenter ? 'auto' : 'none'}`}
                 >
                   <div className="relative h-full flex flex-col bg-[#dfd4bd] shadow-[0_45px_100px_-20px_rgba(0,0,0,0.9)] border-[4px] border-[#8b7355]/40 overflow-hidden rounded-[2px]">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/handmade-paper.png')] opacity-45 mix-blend-multiply pointer-events-none" />
@@ -399,16 +399,16 @@ const RoadSelectionView = ({ onSelectRoad }: { onSelectRoad: (roadId: string) =>
                         </div>
                       </div>
 
-                      {/* 底部按钮：拉丁文 REVELARE FATVM */}
+                      {/* 底部按钮：拉丁文 FATORVM DIVINATIO (命运占卜) */}
                       <div className="h-24 flex flex-col items-center justify-center relative bg-black/[0.03] -mx-5 -mb-5 border-t border-black/10">
                         <motion.button
                           onClick={() => onSelectRoad(road.id)}
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.95 }}
-                          className="flex flex-col items-center justify-center cursor-pointer group/fate transition-all"
+                          className="flex flex-col items-center justify-center cursor-pointer group/fate transition-all w-full h-full"
                         >
                           <span className="font-serif text-xl md:text-2xl text-red-900/80 tracking-[0.3em] font-bold drop-shadow-sm group-hover/fate:text-red-700 transition-colors uppercase">
-                            REVELARE FATVM
+                            FATORVM DIVINATIO
                           </span>
                           <div className="w-24 h-px bg-red-900/20 mt-2 scale-x-50 group-hover/fate:scale-x-100 transition-transform duration-500" />
                           <span className="mt-2 font-typewriter text-[7px] tracking-[0.5em] text-amber-950/30 uppercase opacity-40 group-hover/fate:opacity-100 transition-opacity whitespace-nowrap">

@@ -11,6 +11,13 @@ import { day1ScenesPart10 } from './Day1/10';
 import { day1ScenesPart11 } from './Day1/11';
 import { day1ScenesPart12 } from './Day1/12';
 
+import { day2Scenes01 } from './Day2/01';
+import { day2Scenes02 } from './Day2/02';
+import { day2Scenes03 } from './Day2/03';
+import { day2Scenes04 } from './Day2/04';
+import { day2Scenes05 } from './Day2/05';
+import { day2Scenes06 } from './Day2/06';
+
 export const act2Scenes = {
   ...day1Scenes1,
   ...day1ScenesPart2,
@@ -24,4 +31,10 @@ export const act2Scenes = {
   ...day1ScenesPart10,
   ...day1ScenesPart11,
   ...day1ScenesPart12,
+  ...day2Scenes01,
+  ...day2Scenes02,
+  ...day2Scenes03,
+  ...day2Scenes04,
+  ...day2Scenes05,
+  ...day2Scenes06,
 };
