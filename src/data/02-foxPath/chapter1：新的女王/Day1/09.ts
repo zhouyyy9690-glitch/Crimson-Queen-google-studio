@@ -4,6 +4,7 @@ export const day1ScenesPart9: Record<string, Scene> = {
   'F102-TalkWithFain': {
     id: 'F102-TalkWithFain',
     title: '再遇芬因',
+    bgm: 'https://cdn.pixabay.com/audio/2024/01/26/audio_60ecf8aaea.mp3',
     particleType: 'evening',
     paragraphs: [
       { text: '很快有人来叩你的门。' },
@@ -42,6 +43,7 @@ export const day1ScenesPart9: Record<string, Scene> = {
   'F102-1-attendafeast': {
     id: 'F102-1-attendafeast',
     title: '赴宴的准备',
+    bgm: 'https://cdn.pixabay.com/audio/2024/01/26/audio_60ecf8aaea.mp3',
     particleType: 'evening',
     paragraphs: [
       { text: '“芬，来不及了。”' },
@@ -63,6 +65,7 @@ export const day1ScenesPart9: Record<string, Scene> = {
   'F102-2-RoderickThorn': {
     id: 'F102-2-RoderickThorn',
     title: '他为你叫来了罗德里克·索恩',
+    bgm: 'https://cdn.pixabay.com/audio/2024/01/26/audio_60ecf8aaea.mp3',
     particleType: 'evening',
     paragraphs: [
       { text: '“陛下。”' },
@@ -79,6 +82,7 @@ export const day1ScenesPart9: Record<string, Scene> = {
   'F102-3-CorbinMide': {
     id: 'F102-3-CorbinMide',
     title: '科尔宾·米德对你鞠躬',
+    bgm: 'https://cdn.pixabay.com/audio/2024/01/26/audio_60ecf8aaea.mp3',
     particleType: 'evening',
     paragraphs: [
       { text: '“陛下。”' },

@@ -4,6 +4,7 @@ export const day1ScenesPart12: Record<string, Scene> = {
   'F115-TerraceLights': {
     id: 'F115-TerraceLights',
     title: '露台远眺',
+    bgm: 'https://cdn.pixabay.com/audio/2024/01/26/audio_60ecf8aaea.mp3',
     particleType: 'nature',
     paragraphs: [
       { text: '你回到房间，洗了澡，换了衣服，顺便吃了些东西。\n侍女一一满足你的要求，她们在你的命令下安静离开.现在，房间里只有你一个人。' },
@@ -24,6 +25,7 @@ export const day1ScenesPart12: Record<string, Scene> = {
   'F116-Sleepless': {
     id: 'F116-Sleepless',
     title: '睡不着',
+    bgm: 'https://cdn.pixabay.com/audio/2024/01/26/audio_60ecf8aaea.mp3',
     particleType: 'nature',
     paragraphs: [
       { text: '睡不着。' },

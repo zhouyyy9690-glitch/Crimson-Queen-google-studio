@@ -4,6 +4,7 @@ export const day1ScenesPart11: Record<string, Scene> = {
   'F105-LeaveDining': {
     id: 'F105-LeaveDining',
     title: '离开',
+    bgm: 'https://cdn.pixabay.com/audio/2024/01/26/audio_60ecf8aaea.mp3',
     particleType: 'nature',
     paragraphs: [
       { text: '最后一道甜点上来时，你觉得自己已经在这坐了一个世纪年那么长。\n一个世纪年是一百年，你想自己已经老了一百岁，更别提你还喝了一些酒。' },
@@ -20,6 +21,7 @@ export const day1ScenesPart11: Record<string, Scene> = {
   'F106-WalkAround': {
     id: 'F106-WalkAround',
     title: '逛一逛',
+    bgm: 'https://cdn.pixabay.com/audio/2024/01/26/audio_60ecf8aaea.mp3',
     particleType: 'nature',
     paragraphs: [
       { text: '夜晚的红堡静悄悄的。褪去了白天的喧嚣，石墙在烛火中投下巨大的阴影。\n空气里有一股凉意，混合着蜡油和旧石头的味道，让你感到陌生。' },
@@ -37,6 +39,7 @@ export const day1ScenesPart11: Record<string, Scene> = {
   'F107-ObserveGuard': {
     id: 'F107-ObserveGuard',
     title: '你走进王宫深处',
+    bgm: 'https://cdn.pixabay.com/audio/2024/01/26/audio_60ecf8aaea.mp3',
     particleType: 'nature',
     paragraphs: [
       { text: '你白天时还没有走进过左边的岔路。到了这时，你开始好奇那里有什么。' },
@@ -55,6 +58,7 @@ export const day1ScenesPart11: Record<string, Scene> = {
   'F108-Getlost': {
     id: 'F108-Getlost',
     title: '你好像迷路了',
+    bgm: 'https://cdn.pixabay.com/audio/2024/01/26/audio_60ecf8aaea.mp3',
     particleType: 'nature',
     paragraphs: [
       { text: '红堡里的走廊错综复杂，你沿着刚才的路往深处走，很快碰到了一面石壁。' },
@@ -74,6 +78,7 @@ export const day1ScenesPart11: Record<string, Scene> = {
   'F109-MeetDurin': {
     id: 'F109-MeetDurin',
     title: '意外的见面',
+    bgm: 'https://cdn.pixabay.com/audio/2024/01/26/audio_60ecf8aaea.mp3',
     particleType: 'nature',
     paragraphs: [
       { text: '转过拐角后，你看见了一扇熟悉的门。\n这里离红堡的大门很近，你在下午闲逛的时候来过这里。' },
