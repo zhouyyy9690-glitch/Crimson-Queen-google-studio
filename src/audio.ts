@@ -8,19 +8,19 @@
 export const SFX_ASSETS = {
   CLICK: "https://cdn.pixabay.com/audio/2022/03/10/audio_017c747e3d.mp3",
   PAGE_TURN: "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==",
-  DOOR_OPEN: "https://cdn.pixabay.com/download/audio/2025/12/19/audio_af89e72c6a.mp3?filename=dragon-studio-open-door-stock-sfx-454246.mp3",
+  DOOR_OPEN: "https://cdn.pixabay.com/audio/2025/12/19/audio_af89e72c6a.mp3",
   UNLOCK: "https://cdn.pixabay.com/audio/2021/08/04/audio_3d98d2495d.mp3", // 清脆的竖琴拨弦
 };
 
 // --- 2. 背景音乐资源库 (BGM Assets Library) ---
 export const BGM_ASSETS = {
   // 【各路线 核心主题曲】
-  MAIN_THEME: "https://cdn.pixabay.com/download/audio/2024/08/31/audio_2120f21e75.mp3?filename=deuslower-medieval-ambient-236809.mp3",
+  MAIN_THEME: "https://cdn.pixabay.com/audio/2024/08/31/audio_2120f21e75.mp3",
   FOX_CH0_THEME: "https://cdn.pixabay.com/audio/2026/03/23/audio_87a13308bf.mp3",
   FOX_CH2_THEME: "https://cdn.pixabay.com/audio/2025/10/27/audio_dc93b69db8.mp3",
-  DEER_THEME: "https://cdn.pixabay.com/download/audio/2026/03/19/audio_54cbf38413.mp3?filename=watermelon_beats-medieval-folk-music-505203.mp3",
+  DEER_THEME: "https://cdn.pixabay.com/audio/2026/03/19/audio_54cbf38413.mp3",
   SPINDLE_THEME: "https://cdn.pixabay.com/audio/2025/10/10/audio_970460aa1a.mp3",
-  EAGLE_THEME: "https://cdn.pixabay.com/download/audio/2024/09/01/audio_7335689da6.mp3?filename=dark-medieval-ambient-237070.mp3",
+  EAGLE_THEME: "https://cdn.pixabay.com/audio/2024/09/01/audio_7335689da6.mp3",
 
   // 【芬因相关】
   FAIN_THEME: "https://cdn.pixabay.com/audio/2024/06/14/audio_a23f5f75f7.mp3",

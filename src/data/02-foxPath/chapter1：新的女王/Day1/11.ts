@@ -78,7 +78,7 @@ export const day1ScenesPart11: Record<string, Scene> = {
   'F109-MeetDurin': {
     id: 'F109-MeetDurin',
     title: '意外的见面',
-    bgm: 'https://cdn.pixabay.com/audio/2024/01/26/audio_60ecf8aaea.mp3',
+    bgm: 'https://cdn.pixabay.com/audio/2024/07/06/audio_62749ecd9e.mp3',
     particleType: 'nature',
     paragraphs: [
       { text: '转过拐角后，你看见了一扇熟悉的门。\n这里离红堡的大门很近，你在下午闲逛的时候来过这里。' },

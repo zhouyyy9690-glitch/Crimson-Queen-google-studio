@@ -7,6 +7,7 @@ class BGMManager {
   private static instance: BGMManager;
   // 使用两个音频对象进行交叉淡入淡出 (Node A 和 Node B)
   private audioNodes: [HTMLAudioElement, HTMLAudioElement];
+  private playPromises: [Promise<void> | null, Promise<void> | null] = [null, null];
   private activeNodeIndex: number = 0;
   private fadeInterval: any = null;
   private currentUrl: string | null = null;
@@ -46,43 +47,69 @@ class BGMManager {
    */
   public async play(url: string, fadeDuration: number = 1500) {
     if (this.currentUrl === url) return; // 已经在播放同个曲目，忽略
+    
+    // 忽略占位符或无效 URL
+    if (!url || url.includes("base64")) {
+      this.stop(fadeDuration);
+      return;
+    }
+
     this.currentUrl = url;
 
-    const oldNode = this.audioNodes[this.activeNodeIndex];
+    const oldNodeIndex = this.activeNodeIndex;
+    const oldNode = this.audioNodes[oldNodeIndex];
+    
     this.activeNodeIndex = 1 - this.activeNodeIndex; // 切换到另一个节点
-    const newNode = this.audioNodes[this.activeNodeIndex];
+    const newNodeIndex = this.activeNodeIndex;
+    const newNode = this.audioNodes[newNodeIndex];
 
     // 清除上一次未完成的淡入淡出任务
-    if (this.fadeInterval) clearInterval(this.fadeInterval);
+    if (this.fadeInterval) {
+      clearInterval(this.fadeInterval);
+      this.fadeInterval = null;
+    }
+
+    // 记录旧节点当前的音量，作为淡出的起点
+    const startOldVol = oldNode.volume;
+    const startTime = Date.now();
 
     // 准备新节点
     newNode.src = url;
     newNode.volume = 0;
     
-    try {
-      await newNode.play();
-      
-      const startTime = Date.now();
-      const startOldVol = oldNode.volume;
-      
-      this.fadeInterval = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / fadeDuration, 1);
+    // 立即启动淡入淡出定时器，不再等待 play() 的 Promise
+    // 这样旧节点可以立即开始变小声
+    this.fadeInterval = setInterval(async () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / fadeDuration, 1);
 
-        // 新节点淡入
-        newNode.volume = progress * this.baseVolume;
-        // 旧节点淡出
-        oldNode.volume = (1 - progress) * startOldVol;
+      // 新节点淡入 (基于 baseVolume)
+      newNode.volume = progress * this.baseVolume;
+      // 旧节点淡出
+      oldNode.volume = (1 - progress) * startOldVol;
 
-        if (progress >= 1) {
-          clearInterval(this.fadeInterval);
-          this.fadeInterval = null;
+      if (progress >= 1) {
+        clearInterval(this.fadeInterval);
+        this.fadeInterval = null;
+        
+        // 安全停止并重置旧节点
+        try {
           oldNode.pause();
-          oldNode.src = ""; // 释放资源
+          oldNode.src = ""; 
+          oldNode.load(); // 强制清除缓存资源
+        } catch (e) {
+          // 忽略
         }
-      }, 50);
+      }
+    }, 50);
+
+    try {
+      // 启动新节点播放
+      const p = newNode.play();
+      this.playPromises[newNodeIndex] = p;
+      await p;
     } catch (err) {
-      console.error("AudioManager Play Error:", err);
+      console.warn("AudioManager Play Interrupted:", url);
     }
   }
 
@@ -92,14 +119,18 @@ class BGMManager {
   public stop(fadeDuration: number = 1000) {
     if (!this.currentUrl) return;
     
-    const activeNode = this.audioNodes[this.activeNodeIndex];
+    const activeIndex = this.activeNodeIndex;
+    const activeNode = this.audioNodes[activeIndex];
     const startVol = activeNode.volume;
     const startTime = Date.now();
 
-    if (this.fadeInterval) clearInterval(this.fadeInterval);
+    if (this.fadeInterval) {
+      clearInterval(this.fadeInterval);
+      this.fadeInterval = null;
+    }
     this.currentUrl = null;
 
-    this.fadeInterval = setInterval(() => {
+    this.fadeInterval = setInterval(async () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / fadeDuration, 1);
 
@@ -108,8 +139,16 @@ class BGMManager {
       if (progress >= 1) {
         clearInterval(this.fadeInterval);
         this.fadeInterval = null;
-        activeNode.pause();
-        activeNode.src = "";
+        
+        try {
+          if (this.playPromises[activeIndex]) {
+            await this.playPromises[activeIndex];
+          }
+          activeNode.pause();
+          activeNode.src = "";
+        } catch (e) {
+          // 忽略
+        }
       }
     }, 50);
   }

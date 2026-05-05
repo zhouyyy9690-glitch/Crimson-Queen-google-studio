@@ -4,7 +4,6 @@
  */
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { AnimalPattern } from './AnimalPattern';
 import { Button } from './Button';
 import { Choice } from '../types';
 
@@ -34,9 +33,6 @@ export const ChoiceExplanationOverlay: React.FC<ChoiceExplanationOverlayProps> =
         >
           {/* 主容器：包含边框和内部背景 */}
           <div className="relative max-w-lg w-full p-8 md:p-12 border-2 border-amber-900/40 bg-[#0a0a0a] text-center overflow-hidden">
-            {/* 这里的动物图案背景根据选择的类型动态变化 */}
-            <AnimalPattern type={choice.animalType} />
-            
             <div className="relative z-10 space-y-6 md:space-y-8">
               {/* 选项标题 */}
               <h3 className="font-display text-2xl md:text-3xl text-amber-600 tracking-[0.3em] uppercase">

@@ -35,7 +35,7 @@ export const ROADS_CONFIG = [
     chapterPrefix: '04-eaglePath'
   },
   {
-    id: 'spindle',
+    id: 'destiny',
     title: '纺锤之命',
     subtitle: 'FATE OF THE GOLDEN SPINDLE',
     description: '丝线交织成命运的网，每一圈旋转都在重写结局。这是终焉，亦是循环的始点。',
@@ -43,6 +43,16 @@ export const ROADS_CONFIG = [
     color: 'amber',
     chapterPrefix: '05-spindlePath'
   }
+];
+
+export const SEVEN_GODS_PRAYERS = [
+  { ch: "七神之一神圣少女：称颂神圣少女，金月女神！", lat: "SALVE VIRGO SACRA, LUNA AUREA!", god: "神圣少女" },
+  { ch: "七神之二婚妇：称颂婚妇，居所的守护者！", lat: "O MATER FAMILIAS, CUSTOS DOMUS!", god: "婚妇" },
+  { ch: "七神之三剑师：称颂剑师，黑暗中的光芒！", lat: "MAGISTER GLADII, LUX IN TENEBRIS!", god: "剑师" },
+  { ch: "七神之四铁神：称颂铁神，意志与重锤！", lat: "DEUS FERRI, MENS ET MALLEUS!", god: "铁神" },
+  { ch: "七神之五老客：称颂老客，通往终点的旅人！", lat: "HOSPES ANTIQUUS, VIATOR AD FINEM!", god: "老客" },
+  { ch: "七神之六哑言诗人：称颂哑言诗人，静默中的真言！", lat: "POETA MUTUS, VERBUM IN SILENTIO!", god: "哑言诗人" },
+  { ch: "七神之七无性无声之琴：称颂无性无声之琴，永恒之歌！", lat: "LYRA MUTA, CARMEN AETERNUM!", god: "无性无声之琴" }
 ];
 
 export const CHAPTERS_CONFIG = [

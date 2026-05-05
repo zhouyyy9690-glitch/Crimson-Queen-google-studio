@@ -3,7 +3,7 @@ import React from 'react';
 /**
  * 装饰边角组件：为界面添加复古的花纹边框装饰
  */
-export const OrnateCorner = ({ position }: { position: 'tl' | 'tr' | 'bl' | 'br' }) => {
+export const OrnateCorner = ({ position, className }: { position: 'tl' | 'tr' | 'bl' | 'br', className?: string }) => {
   // 根据位置定义旋转角度
   const rotations = {
     tl: 'rotate-0',     // 左上
@@ -21,7 +21,7 @@ export const OrnateCorner = ({ position }: { position: 'tl' | 'tr' | 'bl' | 'br'
   };
 
   return (
-    <div className={`absolute ${positions[position]} ${rotations[position]} w-16 h-16 md:w-24 md:h-24 pointer-events-none opacity-50`}>
+    <div className={`absolute ${positions[position]} ${rotations[position]} w-16 h-16 md:w-24 md:h-24 pointer-events-none opacity-50 ${className || ''}`}>
       <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-amber-700/40">
         {/* 装饰线条路径 */}
         <path d="M10 10H45M10 10V45M10 10L35 35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

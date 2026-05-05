@@ -28,17 +28,17 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   returnToTitle
 }) => {
   return (
-    <header className="mb-6 lg:mb-10 flex items-center justify-between border-b-2 border-double border-amber-900/30 pb-3 lg:pb-5 relative z-10 gap-2">
+    <header className="mb-2 flex items-center justify-between border-b border-amber-900/10 pb-2 relative z-10 gap-2">
       {/* 左侧：系列标题与徽章 */}
-      <div className="flex items-center gap-2 md:gap-4 shrink-0">
-        <Scroll className="w-3.5 h-3.5 md:w-5 md:h-5 text-amber-700/60" />
-        <span className="font-display text-[9px] md:text-sm tracking-[0.15em] md:tracking-[0.3em] text-amber-700/80 uppercase truncate max-w-[100px] md:max-w-none">
+      <div className="flex items-center gap-2 shrink-0">
+        <Scroll className="w-3 h-3 text-amber-700/40" />
+        <span className="font-display text-[8px] md:text-[10px] tracking-[0.2em] text-amber-700/60 uppercase truncate max-w-[100px] md:max-w-none">
           Chronicles
         </span>
       </div>
       
       {/* 右侧：功能控制区按钮组 */}
-      <div className="flex items-center gap-2 md:gap-4 overflow-x-auto overflow-y-hidden no-scrollbar">
+      <div className="flex items-center gap-3 overflow-x-auto overflow-y-hidden no-scrollbar">
         {/* 音量调音台按钮 */}
         <button 
           onClick={() => setShowVolumeMixer(!showVolumeMixer)}

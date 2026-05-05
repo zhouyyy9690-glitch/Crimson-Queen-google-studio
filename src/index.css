@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Almendra:wght@400;700&family=Special+Elite&family=Noto+Serif+SC:wght@200..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Almendra:wght@400;700&family=Special+Elite&family=Noto+Serif+SC:wght@200..900&family=MedievalSharp&family=Uncial+Antiqua&family=Caudex:ital,wght@0,400;0,700;1,400&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -8,6 +8,8 @@
   --font-dialogue: "Almendra", serif;
   --font-typewriter: "Special Elite", system-ui, serif;
   --font-chinese: "Noto Serif SC", serif;
+  --font-medieval: "Uncial Antiqua", serif;
+  --font-latin: "MedievalSharp", serif;
 
   @keyframes glow-pulse {
     0%, 100% { text-shadow: 0 0 5px rgba(217, 119, 6, 0.3); }
@@ -90,6 +92,13 @@
     display: none;
   }
   .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .custom-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }

@@ -19,6 +19,7 @@ interface SceneDisplayProps {
   stageId: string | null; // 阶段ID
   paraObj: Paragraph | undefined; // 当前段落对象
   onNext: () => void; // “继续”的回调
+  onSkip: () => void; // “跳过”的回调
   showChoices: boolean; // 是否显示选项列表
   showEnding: boolean; // 是否显示结局
   showStartTrigger: boolean; // 是否显示“开始书写”触发器
@@ -45,6 +46,7 @@ export const SceneDisplay = ({
   stageId, 
   paraObj, 
   onNext, 
+  onSkip,
   showChoices, 
   showEnding, 
   showStartTrigger, 
@@ -82,109 +84,20 @@ export const SceneDisplay = ({
 
   const isKillScene = sceneId.toLowerCase().includes('kill') || sceneId === 'F41_TrapDeath-1';
   
+  // 内部状态：记录当前段落是否正在打字
+  const [isTypingComplete, setIsTypingComplete] = React.useState(skipTypewriter);
+
+  // 当段落改变时，重置打字状态
+  React.useEffect(() => {
+    setIsTypingComplete(!!skipTypewriter);
+  }, [paraObj, skipTypewriter]);
+
   // Override colors for kill scenes
   const themeColorClass = isKillScene ? 'text-rose-600' : (timeInfo?.colorClass || 'text-amber-900/40');
   const themeGlowClass = isKillScene ? 'bg-rose-500' : (timeInfo?.glowClass || 'bg-amber-400');
 
-  // Reusable Sign of Seven element
-  // Clock-style Sign of Seven for the side margin
-  const ChronoClock = ({ className = "" }: { className?: string }) => {
-    // 7 stars surrounding a central diamond
-    const stars = Array.from({ length: 7 });
-    return (
-      <div className={`flex flex-col items-center ${className}`}>
-        {/* Hanging Ornament Line */}
-        <div className="w-px h-16 md:h-24 bg-gradient-to-b from-transparent via-current to-current opacity-20" />
-        
-        {/* The Clock Container */}
-        <div className="relative w-16 h-16 flex items-center justify-center mt-[-4px]">
-          {/* Central Core */}
-          <div className="relative w-5 h-5 flex items-center justify-center z-10">
-            <div className="absolute inset-0 rotate-45 border border-current opacity-40" />
-            <div className={`w-2 h-2 rounded-full blur-[1px] opacity-90 ${themeGlowClass}`} />
-          </div>
-          
-          {/* Supporting Circular Frame */}
-          <div className="absolute inset-0 rounded-full border border-current opacity-5 scale-90" />
-          <div className="absolute inset-2 rounded-full border border-dotted border-current opacity-10" />
-
-          {/* The 7 Stars */}
-          {stars.map((_, i) => (
-            <div
-              key={i}
-              className="absolute"
-              style={{
-                transform: `rotate(${(i * 360) / 7}deg) translateY(-24px)`
-              }}
-            >
-              <div className={`w-1 h-1 rounded-full bg-current ${i === 0 ? 'scale-150' : 'opacity-40'}`} />
-            </div>
-          ))}
-        </div>
-
-        {/* Decorative Seal Bottom */}
-        <div className="w-2 h-2 rotate-45 border border-current opacity-20 mt-2" />
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-8 lg:space-y-6 relative">
-      {/* Fixed Position Chrono Clock: Hanging from Top Left */}
-      {timeInfo && (
-        <div className="fixed left-4 md:left-12 top-0 z-[60] pointer-events-none">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 1 }}
-            className={themeColorClass}
-          >
-            <ChronoClock />
-          </motion.div>
-        </div>
-      )}
-
-      {/* Refined Manual Save Trigger: Minimalist Hanging UI Component (Fate Compass) */}
-      {!showStartTrigger && !showChoices && !showEnding && (
-        <div className="fixed right-4 md:right-12 top-0 z-[60]">
-          <motion.button
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ y: 5 }}
-            onClick={() => setShowProgress(true)}
-            className="flex flex-col items-center group cursor-pointer"
-          >
-            {/* Hanging Line - Matches ChronoClock */}
-            <div className="w-px h-12 md:h-20 bg-gradient-to-b from-transparent via-amber-900/30 to-amber-900/30 opacity-40 group-hover:opacity-100 group-hover:h-24 md:group-hover:h-32 transition-all duration-700" />
-            
-            {/* The "Fate Compass" Icon */}
-            <div className="relative w-12 h-12 flex items-center justify-center mt-[-4px]">
-              {/* Outer Decorative Rings */}
-              <div className="absolute inset-0 border border-amber-900/20 rounded-full scale-75 group-hover:scale-100 group-hover:border-amber-600/40 transition-all duration-700" />
-              <div className="absolute inset-1 border border-dotted border-amber-900/10 rounded-full scale-90 group-hover:rotate-180 transition-transform duration-1000" />
-              
-              {/* Central Symbol: A stylized pivot/needle */}
-              <div className="relative w-6 h-6 flex items-center justify-center">
-                {/* Horizontal Bar */}
-                <div className="w-full h-[1px] bg-amber-900/40 group-hover:bg-amber-600 transition-colors" />
-                {/* Vertical Needle */}
-                <div className="absolute h-full w-[1px] bg-amber-900/60 group-hover:bg-amber-500 transition-colors shadow-[0_0_8px_rgba(217,119,6,0.3)]" />
-                
-                {/* Tiny Star Points */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-1 h-1 bg-amber-600 rotate-45 scale-50 group-hover:scale-100 transition-transform" />
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 w-1 h-1 bg-amber-600 rotate-45 scale-50 group-hover:scale-100 transition-transform" />
-              </div>
-              
-              {/* Pulse effect on hover */}
-              <div className="absolute inset-0 bg-amber-600/5 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-
-            {/* Decorative Weight Dot */}
-            <div className="w-1.5 h-1.5 rotate-45 border border-amber-900/40 bg-[#0a0a0a] mt-1 group-hover:bg-amber-900 transition-colors" />
-          </motion.button>
-        </div>
-      )}
-
       <div className="text-left relative z-10">
         <motion.div
            initial={{ opacity: 0, y: -10 }}
@@ -197,13 +110,13 @@ export const SceneDisplay = ({
         >
           {/* 1. Scene Title */}
           <motion.h2 
-            className="font-display text-4xl md:text-5xl lg:text-5xl text-amber-600 tracking-wider leading-tight mb-8 text-center"
+            className="font-display text-4xl md:text-5xl lg:text-6xl text-amber-600 tracking-wider leading-tight mb-4 text-center"
           >
             {sceneTitle}
           </motion.h2>
 
           {/* 2. Ornate Divider (directly below title) */}
-          <div className="w-32 md:w-56 h-px bg-gradient-to-r from-transparent via-amber-900/30 to-transparent mx-auto relative mb-6">
+          <div className="w-32 md:w-56 h-px bg-gradient-to-r from-transparent via-amber-900/30 to-transparent mx-auto relative mb-4">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rotate-45 border border-amber-900/50 bg-[#0a0a0a]" />
           </div>
 
@@ -220,25 +133,28 @@ export const SceneDisplay = ({
             </motion.div>
           )}
 
-          <div className="h-4" />
+          <div className="h-2" />
         </motion.div>
 
-        <div className="min-h-[120px] lg:min-h-[150px] flex items-center justify-center mt-8">
+        <div className="min-h-[160px] lg:min-h-[200px] flex items-center justify-center mt-6 mb-10">
           {paraObj && (
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              key={skipTypewriter ? 'static' : 'animated'}
-              className="text-lg md:text-2xl lg:text-2xl leading-relaxed font-serif text-justify whitespace-pre-wrap max-w-xl lg:max-w-3xl mx-auto px-2 md:px-0"
+              key={paraObj.text}
+              className="text-lg md:text-2xl lg:text-2xl leading-relaxed font-serif text-justify whitespace-pre-wrap max-w-xl lg:max-w-3xl mx-auto px-4 md:px-0 text-[#d4d4d8] drop-shadow-sm"
             >
-              {skipTypewriter ? (
+              {isTypingComplete ? (
                 textSegments.map((seg, i) => (
                   <span key={i} className={seg.className}>
                     {seg.text}
                   </span>
                 ))
               ) : (
-                <TypewriterText segments={textSegments} />
+                <TypewriterText 
+                  segments={textSegments} 
+                  onComplete={() => setIsTypingComplete(true)}
+                />
               )}
             </motion.p>
           )}
@@ -246,13 +162,27 @@ export const SceneDisplay = ({
       </div>
 
       {!showChoices && !showEnding && !showStartTrigger && (
-        <div className="flex flex-col items-center gap-6 mt-12">
+        <div className="flex flex-col items-center gap-4 mt-2 pb-10">
+          {/* Continue 按钮：始终保持显示 */}
           <button
             onClick={onNext}
-            className="flex items-center gap-2 text-amber-700/60 hover:text-amber-600 transition-colors uppercase tracking-[0.3em] text-xs cursor-pointer group"
+            className="flex items-center gap-2 text-amber-600/90 hover:text-amber-400 transition-colors uppercase tracking-[0.3em] text-[11px] cursor-pointer group py-2 opacity-100"
           >
             Continue
             <ChevronDown className="w-4 h-4 group-hover:translate-y-1 transition-transform" />
+          </button>
+
+          {/* Skip 按钮：跳过不断浮现的文本，直接跳到有选项的位置 */}
+          <button
+            onClick={() => {
+              if (!isTypingComplete) {
+                setIsTypingComplete(true);
+              }
+              onSkip();
+            }}
+            className="flex items-center gap-2 text-white/30 hover:text-white/60 transition-colors uppercase tracking-[0.4em] text-[9px] py-1 cursor-pointer"
+          >
+            Skip
           </button>
         </div>
       )}

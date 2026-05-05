@@ -69,19 +69,16 @@ export const ChapterSplash: React.FC<ChapterSplashProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a0a0a] cursor-pointer"
+      className="relative w-full py-20 flex items-center justify-center cursor-pointer"
       onClick={handleStartExit}
     >
-      {/* 羊皮纸底层背景与纹理叠加 */}
-      <div className="absolute inset-0 bg-[#e3bc6a] opacity-90" />
-      <div className="absolute inset-0 opacity-40 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/old-map.png')]" />
-      <div className="absolute inset-0 opacity-20 mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')]" />
+      {/* 移除羊皮纸背景，允许黑色桌面透出 */}
       
-      {/* 华丽的边框装饰结构 */}
+      {/* 华丽的边框装饰结构：调整颜色以适应暗色背景 */}
       <motion.div 
         animate={isExiting ? { scale: 1.02, opacity: 0, filter: "blur(20px)" } : { scale: 1, opacity: 1 }}
         transition={{ duration: 2.0, ease: "easeInOut" }}
-        className="absolute inset-6 md:inset-12 border border-amber-950/20 flex items-center justify-center"
+        className="absolute inset-x-0 inset-y-[-10vh] border border-amber-600/10 flex items-center justify-center pointer-events-none"
       >
         <DetailedOrnateCorner position="tl" />
         <DetailedOrnateCorner position="tr" />
@@ -96,42 +93,41 @@ export const ChapterSplash: React.FC<ChapterSplashProps> = ({
           animate={isExiting 
             ? { 
                 opacity: [1, 0.7, 0.4, 0.1, 0], 
-                scale: 1.35, 
+                scale: 1.1, 
                 filter: ["blur(0px)", "blur(15px)", "blur(35px)", "blur(55px)", "blur(75px)"],
                 y: -10
               } 
             : { opacity: 1, y: 0 }
           }
           transition={isExiting 
-            ? { duration: 3.0, ease: [0.22, 1, 0.36, 1] } 
+            ? { duration: 2.0, ease: [0.22, 1, 0.36, 1] } 
             : { delay: 0.5, duration: 2 }
           }
           className="space-y-12"
         >
-          {/* 章节页眉：拉丁语标题与罗马数字 */}
+          {/* 章节页眉：针对暗色桌面调整颜色 */}
           <div className="flex flex-col items-center">
-            <div className={`w-12 h-px bg-amber-950/40 mb-6 transition-all duration-1200 ${isExiting ? 'w-80 opacity-0' : ''}`} />
-            <h4 className="font-serif italic text-amber-950/60 tracking-[0.4em] uppercase text-xs md:text-sm">
+            <div className={`w-12 h-px bg-amber-600/30 mb-6 transition-all duration-1200 ${isExiting ? 'w-80 opacity-0' : ''}`} />
+            <h4 className="font-serif italic text-amber-600/60 tracking-[0.4em] uppercase text-xs md:text-sm">
               Incipit Liber (卷首)
             </h4>
-            <h2 className="font-display text-5xl md:text-8xl text-amber-950/90 tracking-[0.25em] mt-2 mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+            <h2 className="font-display text-5xl md:text-8xl text-amber-500 tracking-[0.25em] mt-2 mb-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
               {chapterNumber}
             </h2>
-            <div className={`w-12 h-px bg-amber-950/40 mt-4 transition-all duration-1200 ${isExiting ? 'w-80 opacity-0' : ''}`} />
+            <div className={`w-12 h-px bg-amber-600/30 mt-4 transition-all duration-1200 ${isExiting ? 'w-80 opacity-0' : ''}`} />
           </div>
 
-          {/* 章节主、副标题：带有墨水晕开效果的渐变动画 */}
+          {/* 章节主、副标题：调整为金色系以匹配黑色背景 */}
           <div className="space-y-6">
             <motion.h1 
-              animate={isExiting ? { letterSpacing: "0.4em", opacity: 0.6 } : {}}
+              animate={isExiting ? { letterSpacing: "0.2em", opacity: 0.6 } : {}}
               transition={{ duration: 2.5 }}
-              className="font-chinese font-bold text-5xl md:text-7xl text-amber-950 tracking-[0.1em] leading-tight drop-shadow-sm"
-              style={{ filter: "drop-shadow(0px 2px 2px rgba(120, 50, 0, 0.2))" }}
+              className="font-chinese font-bold text-5xl md:text-7xl text-amber-600 tracking-[0.1em] leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
             >
               {chapterTitle}
             </motion.h1>
             {chapterSubtitle && (
-              <p className="font-gothic italic text-amber-900/80 text-xl md:text-3xl tracking-[0.3em] uppercase opacity-80 decoration-amber-900/20 underline underline-offset-8">
+              <p className="font-gothic italic text-amber-700/80 text-xl md:text-3xl tracking-[0.3em] uppercase opacity-80 decoration-amber-600/20 underline underline-offset-8">
                 {chapterSubtitle}
               </p>
             )}
@@ -145,10 +141,10 @@ export const ChapterSplash: React.FC<ChapterSplashProps> = ({
                  animate={{ opacity: [0, 1, 0] }}
                  exit={{ opacity: 0 }}
                  transition={{ repeat: Infinity, duration: 4, delay: 3 }}
-                 className="pt-20"
+                 className="pt-12"
               >
-                <p className="font-serif italic text-amber-950/50 text-[11px] tracking-[0.4em] uppercase">
-                  点击屏幕，揭开命运的篇章 · Tap to unroll the destiny
+                <p className="font-serif italic text-amber-600/40 text-[11px] tracking-[0.4em] uppercase">
+                  点击继续书写章节 · Tap to continue writing
                 </p>
               </motion.div>
             )}
@@ -156,8 +152,8 @@ export const ChapterSplash: React.FC<ChapterSplashProps> = ({
         </motion.div>
       </div>
       
-      {/* 装饰边框与阴影叠加 */}
-      <div className="absolute inset-0 pointer-events-none opacity-25 bg-[radial-gradient(circle,transparent_40%,rgba(0,0,0,0.6)_100%)] shadow-inner" />
+      {/* 边缘渐变：轻轻压低四周，增强聚焦感 */}
+      <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle,transparent_40%,rgba(0,0,0,0.8)_100%)] shadow-inner" />
     </motion.div>
   );
 };

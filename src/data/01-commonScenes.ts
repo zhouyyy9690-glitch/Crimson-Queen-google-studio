@@ -12,26 +12,22 @@ export const commonScenes: Record<string, Scene> = {
       { 
         text: '狐狸之路 ', 
         nextSceneId: 'F1-fox', 
-        animalType: 'fox', 
-        explanation: '你将带来，你将带去。\n你将统治，你将君临。\n哪一个才是你的未来？' 
+        animalType: 'fox' 
       },
       { 
         text: '红鹿之路', 
         nextSceneId: 'd1-deer', 
-        animalType: 'deer', 
-        explanation: '雀鸟与铁剑，弟弟与儿子。你是女王的夜莺，还是持琴的骑士？' 
+        animalType: 'deer' 
       },
       { 
         text: '黑鹰之路', 
         nextSceneId: 'eagle', 
-        animalType: 'eagle', 
-        explanation: '篡夺者与被遗忘者。你是权力的棋子，还是破局的利刃？'
+        animalType: 'eagle' 
       },
       { 
         text: '纺锤之路', 
         nextSceneId: 'Destiny', 
-        animalType: 'destiny', 
-        explanation: '在你被尊为白王之前，这里有一千零一根羊毛。作为纺织女，你需要将它们全部纺织成线。'
+        animalType: 'destiny'
       }
     ]
   },

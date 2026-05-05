@@ -5,10 +5,37 @@
 
 import { useState, useEffect, useMemo, useRef, WheelEvent, type ReactNode, type MutableRefObject } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'motion/react';
-import { CHAPTERS_CONFIG, STORAGE_KEYS } from './constants';
+import { CHAPTERS_CONFIG, STORAGE_KEYS, SEVEN_GODS_PRAYERS } from './constants';
 import { ChapterSelectModal } from './components/ChapterSelectModal';
 import { ChapterSplash } from './components/ChapterSplash';
 import { OrnateCorner } from './components/OrnateCorner';
+import { BookStack } from './components/BookStack';
+import { MedievalLetters } from './components/MedievalLetters';
+
+/**
+ * 边缘暗角组件 - 提升氛围感，聚焦中心区域
+ */
+const Vignette = () => (
+  <div className="fixed inset-0 pointer-events-none z-[999] bg-[radial-gradient(circle,transparent_40%,rgba(0,0,0,0.5)_100%)]" />
+);
+
+/**
+ * 烛光晃动氛围组件 - 通过全屏极低透明度的覆盖层模拟火光跳动
+ */
+const CandleLightEffect = () => (
+  <motion.div 
+    className="fixed inset-0 pointer-events-none z-[998] bg-orange-500/5 mix-blend-overlay"
+    animate={{
+      opacity: [0.03, 0.08, 0.05, 0.1, 0.04],
+    }}
+    transition={{
+      duration: 2.5,
+      repeat: Infinity,
+      ease: "easeInOut"
+    }}
+  />
+);
+
 import { 
   Book, 
   ChevronRight, 
@@ -55,7 +82,6 @@ import { ProgressSave } from './components/ProgressSave';
 import { WorldMap } from './components/WorldMap';
 import { Notification } from './components/Notification';
 import { EndingGallery } from './components/EndingGallery';
-import { AnimalPattern } from './components/AnimalPattern';
 import { ChroniclerTransition } from './components/ChroniclerTransition';
 import { GameHeader } from './components/GameHeader';
 import { GameFooter } from './components/GameFooter';
@@ -72,7 +98,10 @@ import { DEBUG_CONFIG } from './config/debug';
 import ParticleBackground from './components/ParticleBackground';
 import CustomCursor from './components/CustomCursor';
 
-// --- 基础 UI 组件与工具函数 ---
+import { GameIntroText } from './components/GameIntroText';
+import { OpenedBook } from './components/OpenedBook';
+
+// --- 基础 UI 结构 ---
 
 
 export default function App() {
@@ -143,6 +172,11 @@ export default function App() {
   const [showDebug, setShowDebug] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [showIntro, setShowIntro] = useState(!isTestMode); // 测试模式下默认跳过开场动画
+  const [showIntroText, setShowIntroText] = useState(true); 
+  const [isBookOpened, setIsBookOpened] = useState(true); // 默认开启界面，显示书堆桌面
+  const [isRedBookDetailOpen, setIsRedBookDetailOpen] = useState(false); // 记录红书翻开状态
+  const [pausedPaths, setPausedPaths] = useState<Record<string, string | null>>({}); // 各路径的暂停进度
+  const [activePrayer, setActivePrayer] = useState<{ ch: string, lat: string } | null>(null); // 七神祷文
 
   // 引用管理：通知计时器
   const [notifications, setNotifications] = useState<{id: string, title: string, type: 'ending' | 'character' | 'location' | 'insight'}[]>([]);
@@ -329,6 +363,11 @@ export default function App() {
     return characters.find(c => c.id === selectedCharacterId) || null;
   }, [selectedCharacterId]);
 
+  // 判定是否处于叙事路径游玩状态 - 移动至顶层 Hook 区，修复 Hook 顺序错误
+  const isNarrativeMode = useMemo(() => {
+    return currentSceneId !== 'start' && !currentScene.isEnding;
+  }, [currentSceneId, currentScene.isEnding]);
+
   // --- 数据持久化与生命周期 (Persistence & Lifecycle) ---
 
   // 保存当前游戏状态到本地存储 (自动存档)
@@ -410,6 +449,7 @@ export default function App() {
   const returnToTitle = () => {
     saveGame();
     setIsStarting(false);
+    setIsBookOpened(false);
     resetGame();
     setSessionFlags({});
   };
@@ -650,11 +690,14 @@ export default function App() {
   };
 
   const proceedWithChoice = (choice: Choice) => {
-    // Reset paragraph index and other states synchronously with scene/stage changes
-    // to prevent "flashing" old state on new content
+    // --- 确保跳转后状态正确 ---
     setSelectedChoice(null);
     setShowExplanation(false);
-    setIsStarting(false);
+    
+    // 如果是从初始选择界面跳转，标记游戏正式开始
+    if (currentSceneId === 'start') {
+      setIsStarting(true);
+    }
 
     if (choice.animalType) {
       setCurrentPath(choice.animalType);
@@ -768,6 +811,8 @@ export default function App() {
     setCurrentSceneId(gameData.initialScene);
     setCurrentStageId(null);
     setCurrentParaIndex(0);
+    setPausedPaths({});
+    setActivePrayer(null);
   };
 
   const resetAllProgress = () => {
@@ -850,10 +895,68 @@ export default function App() {
     }
   };
 
-  // Clear newly unlocked highlights when moving to next paragraph or scene handled in main effect above
+  /**
+   * 跳过当前场景所有文本，直接到达选项位置
+   */
+  const handleSkip = () => {
+    if (activeParagraphs.length <= 1 || currentParaIndex >= activeParagraphs.length - 1) {
+      return;
+    }
+
+    // 批量处理中间段落的“已读/解锁”逻辑
+    const allSkippedTexts: string[] = [];
+    const newSeenChars = new Set(seenCharacterNames);
+    const newSeenLocs = new Set(seenLocationNames);
+
+    for (let i = currentParaIndex; i < activeParagraphs.length - 1; i++) {
+      const p = activeParagraphs[i];
+      allSkippedTexts.push(p.text);
+
+      // 解锁逻辑同步
+      characters.forEach(char => {
+        if (p.text.includes(char.name)) newSeenChars.add(char.name);
+      });
+      locations.forEach(loc => {
+        if (p.text.includes(loc.name)) newSeenLocs.add(loc.name);
+      });
+    }
+
+    setSeenCharacterNames(newSeenChars);
+    setSeenLocationNames(newSeenLocs);
+    setVisitedTexts(prev => [...prev, ...allSkippedTexts]);
+    
+    // 直接跳到最后一段
+    setCurrentParaIndex(activeParagraphs.length - 1);
+
+    // 如果到达结局最后一段，执行存档
+    if (currentScene.isEnding) {
+      const lastText = activeParagraphs[activeParagraphs.length - 1].text;
+      saveEnding(currentSceneId, currentScene.title, lastText);
+    }
+  };
+
+  const handleReturnToStudy = () => {
+    if (currentPath) {
+      setPausedPaths(prev => ({ ...prev, [currentPath]: currentSceneId }));
+    }
+    const randomPrayer = SEVEN_GODS_PRAYERS[Math.floor(Math.random() * SEVEN_GODS_PRAYERS.length)];
+    setActivePrayer(randomPrayer);
+    setCurrentSceneId(gameData.initialScene);
+    setIsStarting(false);
+    playSFX(SFX_ASSETS.DOOR_OPEN, isMuted, sfxVolume * 0.5);
+  };
+
+  const handleResumeGame = (pathId: string) => {
+    const savedSceneId = pausedPaths[pathId];
+    if (savedSceneId) {
+      setCurrentSceneId(savedSceneId);
+      setCurrentPath(pathId as any);
+      setIsStarting(true);
+      setIsRedBookDetailOpen(false);
+    }
+  };
 
   // --- 叙事工具函数与环境判定 ---
-  // 已移至 src/lib/narrative-utils.ts
   const renderTextWithDialogue = (text: string, isThought?: boolean) => parseTextWithDialogue(text, isThought);
 
   const currentParticleType = useMemo(() => 
@@ -869,207 +972,307 @@ export default function App() {
   const showStartTrigger = isStartScene && isLastPara && !isStarting;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#d4d4d8] font-serif selection:bg-amber-900/40 overflow-x-hidden no-scrollbar lg:cursor-none">
+    <div className="min-h-screen bg-[#0a0a0a] text-[#d4d4d8] font-serif selection:bg-amber-900/40 overflow-x-hidden no-scrollbar lg:cursor-none relative">
+      {/* 常驻右侧的存档指针（命运罗盘）：仅在正文游玩开始后显示，固定不动 */}
+      {isStarting && hasInteracted && (
+        <div className="fixed right-4 md:right-12 top-0 z-[1000] pointer-events-none">
+          <motion.button
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: 5 }}
+            onClick={() => setShowProgress(true)}
+            className="flex flex-col items-center group cursor-pointer pointer-events-auto"
+          >
+            {/* Hanging Line */}
+            <div className="w-px h-12 md:h-20 bg-gradient-to-b from-transparent via-amber-900/30 to-amber-900/30 opacity-40 group-hover:opacity-100 group-hover:h-24 md:group-hover:h-32 transition-all duration-700" />
+            
+            {/* The "Fate Compass" Icon */}
+            <div className="relative w-12 h-12 flex items-center justify-center mt-[-4px]">
+              {/* Outer Decorative Rings */}
+              <div className="absolute inset-0 border border-amber-900/20 rounded-full scale-75 group-hover:scale-100 group-hover:border-amber-600/40 transition-all duration-700" />
+              <div className="absolute inset-1 border border-dotted border-amber-900/10 rounded-full scale-90 group-hover:rotate-180 transition-transform duration-1000" />
+              
+              {/* Central Symbol */}
+              <div className="relative w-6 h-6 flex items-center justify-center">
+                <div className="w-full h-[1px] bg-amber-900/40 group-hover:bg-amber-600 transition-colors" />
+                <div className="absolute h-full w-[1px] bg-amber-900/60 group-hover:bg-amber-500 transition-colors shadow-[0_0_8px_rgba(217,119,6,0.3)]" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-1 h-1 bg-amber-600 rotate-45 scale-50 group-hover:scale-100 transition-transform" />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1 w-1 h-1 bg-amber-600 rotate-45 scale-50 group-hover:scale-100 transition-transform" />
+              </div>
+              <div className="absolute inset-0 bg-amber-600/5 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+
+            {/* Decorative Weight Dot */}
+            <div className="w-1.5 h-1.5 rotate-45 border border-amber-900/40 bg-[#0a0a0a] mt-1 group-hover:bg-amber-900 transition-colors" />
+          </motion.button>
+        </div>
+      )}
       {/* 视觉背景层：处理鼠标、开场、粒子与滤镜 */}
       <BackgroundLayers 
         showIntro={showIntro}
         setShowIntro={setShowIntro}
         particleType={currentParticleType}
+        isNarrativeMode={isNarrativeMode}
       />
       
-      <AnimatePresence>
-        {currentScene.isEnding ? (
-          /* 结局展示界面：当场景标记为 isEnding 时触发 */
-          <EndingDisplay 
-            scene={currentScene}
-            paraIndex={currentParaIndex}
-            onNext={nextParagraph}
-            onReturn={returnToTitle}
-            renderTextWithDialogue={renderTextWithDialogue}
-          />
-        ) : (
-          /* 主游戏容器：处理剧情、地图、人物志等所有核心交互 */
-          <main key="main-content" className="relative max-w-2xl lg:max-w-5xl xl:max-w-6xl mx-auto px-6 md:px-12 lg:px-24 py-12 lg:py-16 flex flex-col min-h-screen transition-all duration-700">
-        {/* 装饰边框 */}
-        <div className="absolute inset-2 md:inset-4 lg:inset-8 border-[1px] border-amber-900/20 pointer-events-none" />
-        <div className="absolute inset-4 md:inset-6 lg:inset-12 border-[1px] border-amber-900/10 pointer-events-none" />
-        
-        {/* 四角的中世纪装饰纹样 */}
-        <OrnateCorner position="tl" />
-        <OrnateCorner position="tr" />
-        <OrnateCorner position="bl" />
-        <OrnateCorner position="br" />
-
-        {/* 顶部页眉：显示标题、音量调节器、历史记录等 */}
-        {!currentScene.isChapter && (
-          <GameHeader 
-            showVolumeMixer={showVolumeMixer}
-            setShowVolumeMixer={setShowVolumeMixer}
-            isMuted={isMuted}
-            setIsMuted={setIsMuted}
-            setShowHistory={setShowHistory}
-            showHistory={showHistory}
-            returnToTitle={returnToTitle}
-          />
-        )}
-
-        {/* 核心剧情展示区域 */}
-        <div className="flex-grow flex flex-col justify-center relative z-10 pointer-events-auto">
-          <AnimatePresence>
-            {currentScene.isChapter ? (
-              /* 章节转场/标题页：显示“第一章”等大标题 */
-              <ChapterSplash 
-                key={currentSceneId}
-                chapterNumber={currentScene.chapterNumber || "I"}
-                chapterTitle={currentScene.title}
-                chapterSubtitle={currentScene.chapterSubtitle}
-                onContinue={() => {
-                  if (activeChoices.length > 0) {
-                    handleChoiceClick(activeChoices[0]);
-                  }
-                }}
-              />
-            ) : (
-              /* 剧情场景页：显示对话、旁白和玩家选项 */
-              <ChroniclerTransition keyStr={currentSceneId + '-' + (currentStageId || 'base') + '-' + currentParaIndex + '-' + isStarting}>
-                <SceneDisplay 
-                sceneTitle={currentScene.title}
-                stageId={currentStageId}
-                paraObj={activeParagraphs[currentParaIndex]}
-                onNext={nextParagraph}
-                showChoices={showChoices}
-                showEnding={false}
-                showStartTrigger={showStartTrigger}
-                onStart={() => {
-                  setHasInteracted(true);
-                  resetGame();
-                  setIsStarting(true);
-                  console.log("✅ 玩家已交互，游戏启动");
-                }}
-                choices={activeChoices}
-                selectedChoice={selectedChoice}
-                onChoiceClick={handleChoiceClick}
-                playSFX={playSFX}
-                isMuted={isMuted}
-                sfxVolume={sfxVolume}
-                renderTextWithDialogue={renderTextWithDialogue}
-                isMenuExpanded={isMenuExpanded}
-                setIsMenuExpanded={setIsMenuExpanded}
-                setShowGallery={setShowGallery}
-                setShowProgress={setShowProgress}
-                setShowMap={setShowMap}
-                sceneId={currentSceneId}
-                skipTypewriter={Object.keys(commonScenes).includes(currentSceneId)}
-                particleType={currentParticleType}
-              />
-              
-              {!showChoices && !showStartTrigger && activeParagraphs.length > 1 && currentParaIndex < activeParagraphs.length - 1 && (
-                <div className="flex justify-center mt-6">
-                  <Button
-                    onClick={() => {
-                      const remaining = activeParagraphs.slice(currentParaIndex, activeParagraphs.length - 1).map(p => p.text);
-                      setVisitedTexts(prev => [...prev, ...remaining]);
-                      setCurrentParaIndex(activeParagraphs.length - 1);
+      <AnimatePresence mode="wait">
+        {showIntro ? null : (
+          <main className="relative w-full h-screen overflow-hidden flex items-center justify-center p-8 lg:p-12">
+            <Vignette />
+            <CandleLightEffect />
+            {/* 核心桌面层：始终存在，包含书堆和开场文字 */}
+            {!currentScene.isEnding && (
+              <div key="desk-base" className={`absolute inset-0 flex items-center justify-center ${isNarrativeMode ? 'z-[900]' : 'z-[30]'} pointer-events-none`}>
+                <div className="relative w-full max-w-[1600px] aspect-video mx-auto pointer-events-none">
+                  <GameIntroText isVisible={showIntroText && currentSceneId === "start"} />
+                  {activePrayer && currentSceneId === 'start' && !isNarrativeMode && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 4, delay: 0.5 }}
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center space-y-6 pointer-events-none z-[60] w-full px-12"
+                    >
+                      <div className="text-amber-900/50 font-chinese text-2xl md:text-4xl tracking-[0.3em] drop-shadow-[0_1px_1px_rgba(255,255,255,0.1)]">
+                        {activePrayer.ch}
+                      </div>
+                      <div className="text-amber-950/20 font-latin text-xs md:text-sm tracking-[0.5em] uppercase" style={{ fontFamily: "'MedievalSharp', serif" }}>
+                        {activePrayer.lat}
+                      </div>
+                    </motion.div>
+                  )}
+                  {/* 书堆组件：在叙事模式下几乎完全可见，保持桌面真实感 */}
+                  <motion.div
+                    animate={{
+                      opacity: isNarrativeMode ? 0.9 : 1,
+                      filter: isNarrativeMode ? "grayscale(0.1)" : "grayscale(0)",
                     }}
-                    className="text-[10px] text-neutral-600 hover:text-amber-900/40 uppercase tracking-[0.2em]"
+                    transition={{ duration: 1.5 }}
+                    className="pointer-events-auto h-full w-full"
                   >
-                    Skip to Choices
-                  </Button>
+                    <MedievalLetters onReturn={handleReturnToStudy} isNarrativeMode={isNarrativeMode} />
+                    <BookStack 
+                      onEntryClick={() => {
+                        setShowIntroText(false);
+                        setIsRedBookDetailOpen(true);
+                      }}
+                      onCompendiumClick={() => setShowCompendium(true)}
+                      onChapterClick={() => setShowChapterSelect(true)}
+                      onMapClick={() => setShowMap(true)}
+                      onEndingClick={() => setShowGallery(true)}
+                      unlockedEndingsCount={unlockedEndings.length}
+                      isEntryLocked={isNarrativeMode}
+                    />
+                  </motion.div>
+
+                  <AnimatePresence>
+                    {isRedBookDetailOpen && (
+                      <OpenedBook 
+                        onClose={() => {
+                          setIsRedBookDetailOpen(false);
+                        }} 
+                        onContinueWriting={handleResumeGame}
+                        pausedPaths={pausedPaths}
+                        onSelectPath={(pathId) => {
+                          const choice = activeChoices.find(c => c.animalType === pathId);
+                          if (choice) {
+                            setIsRedBookDetailOpen(false);
+                            // 直接进入，不通过 handleChoiceClick 以跳过 explanation 弹窗
+                            proceedWithChoice(choice);
+                          }
+                        }}
+                      />
+                    )}
+                  </AnimatePresence>
                 </div>
-              )}
-            </ChroniclerTransition>
-          )}
-          </AnimatePresence>
-        </div>
+              </div>
+            )}
 
-        {/* 选项解释弹窗 */}
-        <ChoiceExplanationOverlay 
-          show={showExplanation}
-          choice={selectedChoice}
-          onProceed={proceedWithChoice}
-        />
+            {/* 结局展示界面独立分支 */}
+            {currentScene.isEnding ? (
+              <EndingDisplay 
+                key="ending"
+                scene={currentScene}
+                paraIndex={currentParaIndex}
+                onNext={nextParagraph}
+                onReturn={returnToTitle}
+                renderTextWithDialogue={renderTextWithDialogue}
+              />
+            ) : (isNarrativeMode && !showProgress && !showHistory && !showMap && !showCompendium && !showGallery && !showChapterSelect && !showVolumeMixer && !showDebug) ? (
+              /* 主游戏内容 - 沉浸模式：文本层级提升至 1100，确保高于桌面装饰层 (z-900) */
+              <div 
+                key="main-game-play"
+                className="absolute inset-0 flex items-center justify-center overflow-hidden z-[1100] pointer-events-none"
+              >
+                {/* 核心叙事容器：层级保持高位，并确保内部可点击项正常响应 */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 2.2, ease: [0.22, 1, 0.36, 1] }}
+                  className="relative w-[90vw] max-w-[1100px] min-h-[80vh] flex flex-col items-center pointer-events-none pt-[22vh] z-[1100]"
+                >
+                  {/* 顶栏按钮：适度内边距 */}
+                  {!currentScene.isChapter && (
+                    <div className="w-full px-8 pt-8 pb-4 relative z-50 pointer-events-auto">
+                      <GameHeader 
+                        showVolumeMixer={showVolumeMixer}
+                        setShowVolumeMixer={setShowVolumeMixer}
+                        isMuted={isMuted}
+                        setIsMuted={setIsMuted}
+                        setShowHistory={setShowHistory}
+                        showHistory={showHistory}
+                        returnToTitle={returnToTitle}
+                      />
+                    </div>
+                  )}
+                  
+                  {/* 正文和交互区域：移除局部滚动，允许在主体容器内自然排布 */}
+                  <div className="w-full flex-grow px-8 md:px-16 relative z-20 pointer-events-none">
+                    <div className="min-h-full flex flex-col justify-start pt-4 pb-12 pointer-events-auto">
+                      <AnimatePresence mode="wait">
+                        {currentScene.isChapter ? (
+                          <ChapterSplash 
+                            key={currentSceneId}
+                            chapterNumber={currentScene.chapterNumber || "I"}
+                            chapterTitle={currentScene.title}
+                            chapterSubtitle={currentScene.chapterSubtitle}
+                            onContinue={() => {
+                              if (activeChoices.length > 0) {
+                                handleChoiceClick(activeChoices[0]);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <ChroniclerTransition keyStr={currentSceneId + '-' + (currentStageId || 'base') + '-' + currentParaIndex + '-' + isStarting}>
+                            <div className="w-full">
+                              <SceneDisplay 
+                                sceneTitle={currentScene.title}
+                                stageId={currentStageId}
+                                paraObj={activeParagraphs[currentParaIndex]}
+                                onNext={nextParagraph}
+                                onSkip={handleSkip}
+                                showChoices={showChoices}
+                                showEnding={false}
+                                showStartTrigger={showStartTrigger}
+                                onStart={() => {
+                                  setHasInteracted(true);
+                                  resetGame();
+                                  setIsStarting(true);
+                                }}
+                                choices={activeChoices}
+                                selectedChoice={selectedChoice}
+                                onChoiceClick={handleChoiceClick}
+                                playSFX={playSFX}
+                                isMuted={isMuted}
+                                sfxVolume={sfxVolume}
+                                renderTextWithDialogue={renderTextWithDialogue}
+                                isMenuExpanded={isMenuExpanded}
+                                setIsMenuExpanded={setIsMenuExpanded}
+                                setShowGallery={setShowGallery}
+                                setShowProgress={setShowProgress}
+                                setShowMap={setShowMap}
+                                sceneId={currentSceneId}
+                                skipTypewriter={Object.keys(commonScenes).includes(currentSceneId)}
+                                particleType={currentParticleType}
+                              />
+                            </div>
+                          </ChroniclerTransition>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
 
-        {/* 系统各模块覆盖层（人物志、地图、设置等） */}
-        <SystemOverlays 
-          notifications={notifications}
-          showGallery={showGallery}
-          setShowGallery={setShowGallery}
-          unlockedEndings={unlockedEndings}
-          showProgress={showProgress}
-          setShowProgress={setShowProgress}
-          loadGame={loadSaveData}
-          manualSaveGame={manualSaveGame}
-          showVolumeMixer={showVolumeMixer}
-          setShowVolumeMixer={setShowVolumeMixer}
-          bgmVolume={bgmVolume}
-          sfxVolume={sfxVolume}
-          setBgmVolume={setBgmVolume}
-          setSfxVolume={setSfxVolume}
-          showHistory={showHistory}
-          setShowHistory={setShowHistory}
-          visitedTexts={visitedTexts}
-          showCompendium={showCompendium}
-          setShowCompendium={setShowCompendium}
-          unlockedCharacters={unlockedCharacters}
-          filteredCharacters={filteredCharacters}
-          selectedCharacter={selectedCharacter}
-          setSelectedCharacterId={setSelectedCharacterId}
-          history={history}
-          currentSceneId={currentSceneId}
-          flags={flags}
-          showMap={showMap}
-          setShowMap={setShowMap}
-          unlockedLocations={unlockedLocations}
-          currentPath={currentPath}
-          mapRef={mapRef}
-          handleMapZoom={handleMapZoom}
-          mapX={mapX}
-          mapY={mapY}
-          mapScale={mapScale}
-          mapScaleSpring={mapScaleSpring}
-          mapTilt={mapTilt}
-          mapPerspectiveOffset={mapPerspectiveOffset}
-          cloudX={cloudX}
-          cloudY={cloudY}
-          labelX={labelX}
-          labelY={labelY}
-          mapObjectHeight={mapObjectHeight}
-          mapObjectOpacity={mapObjectOpacity}
-          mapObjectScale={mapObjectScale}
-          selectedLocationId={selectedLocationId}
-          setSelectedLocationId={setSelectedLocationId}
-          selectedLocation={selectedLocation}
-          unlockedInsights={unlockedInsights}
-          showChapterSelect={showChapterSelect}
-          setShowChapterSelect={setShowChapterSelect}
-          unlockedChapters={unlockedChapters}
-          loadFromChapter={loadFromChapter}
-          resetAllProgress={resetAllProgress}
-          showDebug={showDebug}
-          setShowDebug={setShowDebug}
-          setCurrentSceneId={setCurrentSceneId}
-          setFlags={setFlags}
-          sessionFlags={sessionFlags}
-          setSessionFlags={setSessionFlags}
-          currentParaIndex={currentParaIndex}
-          setCurrentParaIndex={setCurrentParaIndex}
-        />
-
-        {/* 底部页脚：包含全局导航（人物志、地图）和游戏标题 */}
-        {!currentScene.isChapter && (
-          <GameFooter 
-            setShowChapterSelect={setShowChapterSelect}
-            setShowCompendium={setShowCompendium}
-            setShowMap={setShowMap}
-            currentSceneId={currentSceneId}
-          />
+                  {/* 底部导航栏 */}
+                  <div className="w-full pb-6 pt-2 z-[110] pointer-events-auto">
+                    {!currentScene.isChapter && (
+                      <GameFooter 
+                        currentSceneId={currentSceneId}
+                      />
+                    )}
+                    <ICPFooter />
+                  </div>
+                </motion.div>
+              </div>
+            ) : null}
+            
+            {/* 全局 UI 覆盖层：确保弹窗和通知在所有阶段始终可见 */}
+            {isBookOpened && (
+              <>
+                <ChoiceExplanationOverlay 
+                  show={showExplanation}
+                  choice={selectedChoice}
+                  onProceed={proceedWithChoice}
+                />
+                <SystemOverlays 
+                  notifications={notifications}
+                  showGallery={showGallery}
+                  setShowGallery={setShowGallery}
+                  unlockedEndings={unlockedEndings}
+                  showProgress={showProgress}
+                  setShowProgress={setShowProgress}
+                  loadGame={loadSaveData}
+                  manualSaveGame={manualSaveGame}
+                  showVolumeMixer={showVolumeMixer}
+                  setShowVolumeMixer={setShowVolumeMixer}
+                  bgmVolume={bgmVolume}
+                  sfxVolume={sfxVolume}
+                  setBgmVolume={setBgmVolume}
+                  setSfxVolume={setSfxVolume}
+                  showHistory={showHistory}
+                  setShowHistory={setShowHistory}
+                  visitedTexts={visitedTexts}
+                  showCompendium={showCompendium}
+                  setShowCompendium={setShowCompendium}
+                  unlockedCharacters={unlockedCharacters}
+                  filteredCharacters={filteredCharacters}
+                  selectedCharacter={selectedCharacter}
+                  setSelectedCharacterId={setSelectedCharacterId}
+                  history={history}
+                  currentSceneId={currentSceneId}
+                  flags={flags}
+                  showMap={showMap}
+                  setShowMap={setShowMap}
+                  unlockedLocations={unlockedLocations}
+                  currentPath={currentPath}
+                  mapRef={mapRef}
+                  handleMapZoom={handleMapZoom}
+                  mapX={mapX}
+                  mapY={mapY}
+                  mapScale={mapScale}
+                  mapScaleSpring={mapScaleSpring}
+                  mapTilt={mapTilt}
+                  mapPerspectiveOffset={mapPerspectiveOffset}
+                  cloudX={cloudX}
+                  cloudY={cloudY}
+                  labelX={labelX}
+                  labelY={labelY}
+                  mapObjectHeight={mapObjectHeight}
+                  mapObjectOpacity={mapObjectOpacity}
+                  mapObjectScale={mapObjectScale}
+                  selectedLocationId={selectedLocationId}
+                  setSelectedLocationId={setSelectedLocationId}
+                  selectedLocation={selectedLocation}
+                  unlockedInsights={unlockedInsights}
+                  showChapterSelect={showChapterSelect}
+                  setShowChapterSelect={setShowChapterSelect}
+                  unlockedChapters={unlockedChapters}
+                  loadFromChapter={loadFromChapter}
+                  resetAllProgress={resetAllProgress}
+                  showDebug={showDebug}
+                  setShowDebug={setShowDebug}
+                  setCurrentSceneId={setCurrentSceneId}
+                  setFlags={setFlags}
+                  sessionFlags={sessionFlags}
+                  setSessionFlags={setSessionFlags}
+                  currentParaIndex={currentParaIndex}
+                  setCurrentParaIndex={setCurrentParaIndex}
+                />
+              </>
+            )}
+          </main>
         )}
-
-        <ICPFooter />
-      </main>
-    )}
-  </AnimatePresence>
-</div>
+      </AnimatePresence>
+    </div>
   );
 }
 
