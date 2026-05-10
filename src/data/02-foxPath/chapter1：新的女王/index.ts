@@ -17,6 +17,9 @@ import { day2Scenes03 } from './Day2/03';
 import { day2Scenes04 } from './Day2/04';
 import { day2Scenes05 } from './Day2/05';
 import { day2Scenes06 } from './Day2/06';
+import { day2Scenes07 } from './Day2/07';
+import { day2Scenes08 } from './Day2/08';
+import { day2Scenes09 } from './Day2/09';
 
 export const act2Scenes = {
   ...day1Scenes1,
@@ -37,4 +40,7 @@ export const act2Scenes = {
   ...day2Scenes04,
   ...day2Scenes05,
   ...day2Scenes06,
+  ...day2Scenes07,
+  ...day2Scenes08,
+  ...day2Scenes09,
 };

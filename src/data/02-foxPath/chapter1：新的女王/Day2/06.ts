@@ -163,7 +163,7 @@ export const day2Scenes06: Record<string, Scene> = {
       { text: "眼睁睁地看着学士离开，你的心中顿时泛起一阵不情愿。\n但不愿归不愿，在侍女的等候下，你仍然调转脚尖，主动往外走了一步。" }
     ],
     choices: [
-      { text: "继续", nextSceneId: "start" }
+      { text: "继续", nextSceneId: "F132-Rehearsal" }
     ]
   }
 };
