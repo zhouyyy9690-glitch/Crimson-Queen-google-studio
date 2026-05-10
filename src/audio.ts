@@ -61,6 +61,7 @@ export const SCENE_BGM_CONFIG: Record<string, string> = {
   "F112-CorbinEncounter": BGM_ASSETS.GARDEN_MEET,
   "F113-RodrikEncounter": BGM_ASSETS.GARDEN_MEET,
   "F114-JasperEncounter": BGM_ASSETS.GARDEN_MEET,
+  "F136-DarianGarden": BGM_ASSETS.GARDEN_MEET,
   "F49-ThreeRiddlesFerry": BGM_ASSETS.CHAPTER2_FERRY_MELODY,
   "F56-HammondTopic": BGM_ASSETS.CHAPTER2_RUMOR_MELODY,
   "F53-OuterCityArrival": BGM_ASSETS.CHAPTER2_DROST_MELODY,
@@ -70,10 +71,15 @@ export const SCENE_BGM_CONFIG: Record<string, string> = {
 
 // --- 4. 章节识别与主题曲自动分配逻辑 ---
 /**
- * 根据场景 ID 或路线标识，明确划分章节边界。
- * 您可以随时告诉我调整 ID 的范围。
+ * 获取场景背景音乐。
+ * 优先级：SCENE_BGM_CONFIG 特定配置 > 章节/路线 自动分配 > 主题曲保底。
  */
 export const getChapterTheme = (sceneId: string): string => {
+  // 1. 优先检查特定场景映射
+  if (SCENE_BGM_CONFIG[sceneId]) {
+    return SCENE_BGM_CONFIG[sceneId];
+  }
+
   if (sceneId === 'start') return BGM_ASSETS.MAIN_THEME;
 
   // --- 狐狸线 (Fox Path) ---

@@ -4,6 +4,7 @@ export const day2Scenes09: Record<string, Scene> = {
   "F136-DarianGarden": {
     id: "F136-DarianGarden",
     title: "达里安·德·雷斯多",
+    bgm: "GARDEN_MEET",
     paragraphs: [
       { text: "你独自坐在卧房里，只是一会儿功夫，渐移的夕阳就已经铺开了天空。\n站起身走到窗前，风中飘荡着晚香玉的气息。" },
       { text: "一切都令你莫名烦闷，所有都是。床铺、房间、气息、世界，一切的一切。\n如果你还在翠谷，此时你应该在草地上，或是在大厅里。即使你在这儿已经认识了新的朋友，但......" },
