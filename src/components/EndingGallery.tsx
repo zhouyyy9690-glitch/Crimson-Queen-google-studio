@@ -34,11 +34,11 @@ export const EndingGallery: React.FC<EndingGalleryProps> = ({
     <AnimatePresence>
       {showGallery && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[110] bg-[#0a0a0a]/98 backdrop-blur-md p-8 overflow-y-auto"
-        >
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           exit={{ opacity: 0 }}
+           className="fixed inset-0 z-[2000] bg-[#0a0a0a]/98 backdrop-blur-md p-8 overflow-y-auto"
+         >
           <div className="max-w-4xl mx-auto pt-16">
             {/* 顶栏：标题与关闭按钮 */}
             <div className="flex justify-between items-center mb-16 border-b border-amber-900/20 pb-6">

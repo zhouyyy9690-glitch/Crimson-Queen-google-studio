@@ -20,7 +20,7 @@ export const day2Scenes04: Record<string, Scene> = {
       { text: "“好。”你点点头，“请他稍后片刻，我这就来。”" }
     ],
     choices: [
-      { text: "继续", nextSceneId: "F126-DurinAudience1" }
+      { text: "继续", nextSceneId: "F127-DurinAudience1" }
     ]
   },
   "F127-DurinAudience1": {

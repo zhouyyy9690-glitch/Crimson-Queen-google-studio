@@ -57,12 +57,12 @@ export const Compendium = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, pointerEvents: 'none' }}
-      onClick={() => setShowCompendium(false)}
-      className="fixed inset-0 z-[150] bg-[#0a0a0a]/98 backdrop-blur-xl flex items-center justify-center p-4 md:p-12 overflow-hidden pointer-events-auto"
-    >
+       initial={{ opacity: 0 }}
+       animate={{ opacity: 1 }}
+       exit={{ opacity: 0, pointerEvents: 'none' }}
+       onClick={() => setShowCompendium(false)}
+       className="fixed inset-0 z-[2000] bg-[#0a0a0a]/98 backdrop-blur-xl flex items-center justify-center p-4 md:p-12 overflow-hidden pointer-events-auto"
+     >
       <div 
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-7xl h-full max-h-[90vh] flex flex-col border border-amber-900/20 bg-[#0a0a0a] relative overflow-hidden"
@@ -190,7 +190,7 @@ export const Compendium = ({
                   const lastUpdate = selectedCharacter.updates?.slice().reverse().find(u => scenes.includes(u.atScene));
                   const name = lastUpdate?.name || selectedCharacter.name;
                   const nameEn = lastUpdate?.nameEn || selectedCharacter.nameEn;
-                  const title = lastUpdate?.title || selectedCharacter.title;
+                  const title = lastUpdate?.title || selectedCharacter?.title || 'Unknown Title';
                   const description = lastUpdate?.description || selectedCharacter.description;
                   const affinityValue = flags[`relationship.${selectedCharacter.id}`] || 0;
                   const affinityLabel = getAffinityLevel(affinityValue);
@@ -291,7 +291,7 @@ export const Compendium = ({
                   const lastUpdate = selectedCharacter.updates?.slice().reverse().find(u => scenes.includes(u.atScene));
                   const name = lastUpdate?.name || selectedCharacter.name;
                   const nameEn = lastUpdate?.nameEn || selectedCharacter.nameEn;
-                  const title = lastUpdate?.title || selectedCharacter.title;
+                  const title = lastUpdate?.title || selectedCharacter?.title || 'Unknown Title';
                   const description = lastUpdate?.description || selectedCharacter.description;
                   const affinityValue = flags[`relationship.${selectedCharacter.id}`] || 0;
                   const affinityLabel = getAffinityLevel(affinityValue);

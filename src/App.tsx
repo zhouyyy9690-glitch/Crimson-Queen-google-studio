@@ -464,9 +464,9 @@ export default function App() {
     setIsLoaded(true);
   }, [isTestMode]);
 
-  // 测试模式下的自动保存：当核心进度更新时自动存盘
+  // 自动保存：当核心进度更新时自动存盘
   useEffect(() => {
-    if (isTestMode && isLoaded) {
+    if (isLoaded && isStarting) {
       saveGame();
     }
   }, [
@@ -476,7 +476,8 @@ export default function App() {
     currentPath, 
     flags, 
     unlockedChapters, 
-    isLoaded
+    isLoaded,
+    isStarting
   ]);
 
   // 处理剧情自动转场：满足特定标志位时自动移动到新场景
@@ -521,10 +522,11 @@ export default function App() {
     }
   }, [currentSceneId]);
 
-  // Add scene title to visited texts
   useEffect(() => {
     const scene = gameData.scenes[currentSceneId];
-    setVisitedTexts(prev => [...prev, `--- ${scene.title} ---`]);
+    if (scene) {
+      setVisitedTexts(prev => [...prev, `--- ${scene.title} ---`]);
+    }
   }, [currentSceneId]);
 
   // --- 场景生命周期与音频管理已在上方统一处理 ---
@@ -888,9 +890,9 @@ export default function App() {
       setCurrentParaIndex(prev => prev + 1);
 
       // If we just reached the last paragraph of an ending, save it
-      if (currentParaIndex + 1 === activeParagraphs.length - 1 && currentScene.isEnding) {
+      if (currentParaIndex + 1 === activeParagraphs.length - 1 && currentScene?.isEnding) {
         const lastText = activeParagraphs[activeParagraphs.length - 1].text;
-        saveEnding(currentSceneId, currentScene.title, lastText);
+        saveEnding(currentSceneId, currentScene?.title || 'Unknown Ending', lastText);
       }
     }
   };
@@ -929,9 +931,9 @@ export default function App() {
     setCurrentParaIndex(activeParagraphs.length - 1);
 
     // 如果到达结局最后一段，执行存档
-    if (currentScene.isEnding) {
+    if (currentScene?.isEnding) {
       const lastText = activeParagraphs[activeParagraphs.length - 1].text;
-      saveEnding(currentSceneId, currentScene.title, lastText);
+      saveEnding(currentSceneId, currentScene?.title || 'Unknown Ending', lastText);
     }
   };
 
@@ -974,8 +976,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#d4d4d8] font-serif selection:bg-amber-900/40 overflow-x-hidden no-scrollbar lg:cursor-none relative">
       {/* 常驻右侧的存档指针（命运罗盘）：仅在正文游玩开始后显示，固定不动 */}
-      {isStarting && hasInteracted && (
-        <div className="fixed right-4 md:right-12 top-0 z-[1000] pointer-events-none">
+      {isStarting && (
+        <div className="fixed right-4 md:right-12 top-0 z-[2600] pointer-events-none">
           <motion.button
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1130,12 +1132,12 @@ export default function App() {
                   <div className="w-full flex-grow px-8 md:px-16 relative z-20 pointer-events-none">
                     <div className="min-h-full flex flex-col justify-start pt-4 pb-12 pointer-events-auto">
                       <AnimatePresence mode="wait">
-                        {currentScene.isChapter ? (
+                        {currentScene?.isChapter ? (
                           <ChapterSplash 
                             key={currentSceneId}
-                            chapterNumber={currentScene.chapterNumber || "I"}
-                            chapterTitle={currentScene.title}
-                            chapterSubtitle={currentScene.chapterSubtitle}
+                            chapterNumber={currentScene?.chapterNumber || "I"}
+                            chapterTitle={currentScene?.title || ""}
+                            chapterSubtitle={currentScene?.chapterSubtitle}
                             onContinue={() => {
                               if (activeChoices.length > 0) {
                                 handleChoiceClick(activeChoices[0]);
@@ -1146,7 +1148,7 @@ export default function App() {
                           <ChroniclerTransition keyStr={currentSceneId + '-' + (currentStageId || 'base') + '-' + currentParaIndex + '-' + isStarting}>
                             <div className="w-full">
                               <SceneDisplay 
-                                sceneTitle={currentScene.title}
+                                sceneTitle={currentScene?.title || ""}
                                 stageId={currentStageId}
                                 paraObj={activeParagraphs[currentParaIndex]}
                                 onNext={nextParagraph}

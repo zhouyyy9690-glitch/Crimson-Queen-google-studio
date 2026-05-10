@@ -17,7 +17,7 @@ interface NotificationProps {
  */
 export const Notification: React.FC<NotificationProps> = ({ notifications }) => {
   return (
-    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[1000] flex flex-col items-center gap-4 pointer-events-none w-full max-w-sm">
+    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[3000] flex flex-col items-center gap-4 pointer-events-none w-full max-w-sm">
       <AnimatePresence mode="popLayout">
         {notifications.map((note) => (
           <motion.div

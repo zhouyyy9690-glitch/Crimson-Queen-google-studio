@@ -520,7 +520,7 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, pointerEvents: 'none' }}
-      className="fixed inset-0 z-[600] bg-[#050505] flex items-center justify-center overflow-hidden p-4 md:p-8"
+      className="fixed inset-0 z-[2000] bg-[#050505] flex items-center justify-center overflow-hidden p-4 md:p-8"
     >
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-30 pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(30,20,10,0.4)_0%,transparent_100%)] pointer-events-none" />
@@ -768,7 +768,7 @@ export const ChapterSelectModal: React.FC<ChapterSelectModalProps> = ({
       </motion.div>
 
       {/* Footer Interface */}
-      <div className="absolute bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 md:gap-4 z-[110]">
+      <div className="absolute bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 md:gap-4 z-[2010]">
         <button onClick={onReset} className="group flex items-center gap-2 text-rose-900/30 hover:text-rose-600 transition-colors uppercase tracking-[0.2em] text-[8px] md:text-[10px] cursor-pointer">
           <RotateCcw className="w-3 h-3 group-hover:rotate-[-45deg] transition-transform" />
           Reset Chronicles

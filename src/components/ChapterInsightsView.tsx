@@ -212,7 +212,7 @@ export const ChapterInsightsView: React.FC<ChapterInsightsViewProps> = ({
 
             <div className="relative inline-block group">
               <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-neutral-950/80 tracking-[0.1em] font-bold italic mb-2 relative z-10">
-                {chapter.id.split('-').join(' ').toUpperCase()}
+                {chapter?.id?.split('-').join(' ').toUpperCase() || 'UNKNOWN CHAPTER'}
               </h2>
               
               {/* 装饰性底线：渡鸦的支架 */}
@@ -223,7 +223,7 @@ export const ChapterInsightsView: React.FC<ChapterInsightsViewProps> = ({
             <div className="mt-4 flex items-center gap-4">
               <div className="w-8 h-px bg-neutral-950/10" />
               <span className="font-chinese text-sm md:text-base text-neutral-800/50 tracking-[0.4em]">
-                {chapter.title}
+                {chapter?.title || 'Unknown Title'}
               </span>
               <div className="w-8 h-px bg-neutral-950/10" />
             </div>
@@ -322,7 +322,7 @@ export const ChapterInsightsView: React.FC<ChapterInsightsViewProps> = ({
                 </div>
 
                 <h4 className="font-chinese text-xl text-neutral-900 tracking-wider">
-                  {selectedInsight.title}
+                  {selectedInsight?.title || 'Unknown Insight'}
                 </h4>
 
                 <div className="h-px bg-neutral-900/5 w-full" />

@@ -28,11 +28,11 @@ export const VolumeMixer = ({
 }: VolumeMixerProps) => {
   return (
     <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, pointerEvents: 'none' }}
-      className="fixed inset-0 z-[500] bg-[#0a0a0a] overflow-y-auto px-6 py-12 md:p-12"
-    >
+       initial={{ opacity: 0 }}
+       animate={{ opacity: 1 }}
+       exit={{ opacity: 0, pointerEvents: 'none' }}
+       className="fixed inset-0 z-[2000] bg-[#0a0a0a] overflow-y-auto px-6 py-12 md:p-12"
+     >
       <div className="min-h-full flex flex-col items-center justify-center relative">
         {/* 背景纹理与光晕 */}
         <div className="fixed inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-30 pointer-events-none" />

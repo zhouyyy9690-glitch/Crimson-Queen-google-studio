@@ -23,13 +23,25 @@ export const ProgressSave = ({
   loadGame,
   manualSaveGame
 }: ProgressSaveProps) => {
-  // 检查本地是否存在存档数据
-  const autoSave = localStorage.getItem('hersey_save_data');
-  const manualSave = localStorage.getItem('hersey_manual_save');
-  
-  const autoData = autoSave ? JSON.parse(autoSave) : null;
-  const manualData = manualSave ? JSON.parse(manualSave) : null;
+  // 使用状态管理存档数据，确保保存后 UI 立即刷新
+  const [saveData, setSaveData] = React.useState({
+    auto: localStorage.getItem('hersey_save_data'),
+    manual: localStorage.getItem('hersey_manual_save')
+  });
 
+  // 当显示状态改变时，同步一次最新的本地数据
+  React.useEffect(() => {
+    if (showProgress) {
+      setSaveData({
+        auto: localStorage.getItem('hersey_save_data'),
+        manual: localStorage.getItem('hersey_manual_save')
+      });
+    }
+  }, [showProgress]);
+
+  const autoData = saveData.auto ? JSON.parse(saveData.auto) : null;
+  const manualData = saveData.manual ? JSON.parse(saveData.manual) : null;
+  
   const SaveSlot = ({ 
     type, 
     data, 
@@ -42,6 +54,19 @@ export const ProgressSave = ({
     onSave?: () => void 
   }) => {
     const isManual = type === 'manual';
+    const [isConfirming, setIsConfirming] = React.useState(false);
+    
+    const handleSave = () => {
+      if (onSave) {
+        onSave();
+        // 保存后更新本地显示状态
+        setSaveData(prev => ({
+          ...prev,
+          [type]: localStorage.getItem(type === 'manual' ? 'hersey_manual_save' : 'hersey_save_data')
+        }));
+        setIsConfirming(false);
+      }
+    };
     
     return (
       <div className={`p-5 border ${data ? 'border-amber-900/40 bg-amber-950/5' : 'border-neutral-900 bg-transparent'} relative group transition-all`}>
@@ -65,23 +90,41 @@ export const ProgressSave = ({
 
         {data ? (
           <div className="space-y-3">
-            <button
-              onClick={onLoad}
-              className="w-full py-2 bg-amber-900/10 border border-amber-800/30 text-amber-600 hover:bg-amber-600 hover:text-[#0a0a0a] transition-all uppercase tracking-[0.2em] text-[9px] cursor-none"
-            >
-              继续这段旅程
-            </button>
-            {onSave && (
-              <button
-                onClick={() => {
-                  if (confirm('是否要在此时刻刻下新的印记？这会覆盖旧的记录。')) {
-                    onSave();
-                  }
-                }}
-                className="w-full py-2 border border-amber-900/20 text-amber-900/60 hover:text-amber-600 hover:border-amber-600 transition-all uppercase tracking-[0.2em] text-[9px] cursor-none"
-              >
-                在这里留下印记
-              </button>
+            {!isConfirming ? (
+              <>
+                <button
+                  onClick={onLoad}
+                  className="w-full py-2 bg-amber-900/10 border border-amber-800/30 text-amber-600 hover:bg-amber-600 hover:text-[#0a0a0a] transition-all uppercase tracking-[0.2em] text-[9px] cursor-pointer"
+                >
+                  继续这段旅程
+                </button>
+                {onSave && (
+                  <button
+                    onClick={() => setIsConfirming(true)}
+                    className="w-full py-2 border border-amber-900/20 text-amber-900/60 hover:text-amber-600 hover:border-amber-600 transition-all uppercase tracking-[0.2em] text-[9px] cursor-pointer"
+                  >
+                    在这里留下印记
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+                <p className="text-[8px] text-amber-600/80 uppercase tracking-widest text-center mb-1">覆盖旧的记录？</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSave}
+                    className="flex-1 py-1.5 bg-amber-600 text-[#0a0a0a] uppercase tracking-widest text-[8px] cursor-pointer"
+                  >
+                    确认
+                  </button>
+                  <button
+                    onClick={() => setIsConfirming(false)}
+                    className="flex-1 py-1.5 border border-amber-900/40 text-amber-900/60 uppercase tracking-widest text-[8px] cursor-pointer"
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         ) : (
@@ -89,8 +132,8 @@ export const ProgressSave = ({
             <p className="text-[9px] text-neutral-600 uppercase tracking-widest italic mb-3">虚位以待...</p>
             {onSave && (
               <button
-                onClick={onSave}
-                className="px-4 py-1.5 border border-amber-900/40 text-amber-900/60 hover:text-amber-600 hover:border-amber-600 transition-all uppercase tracking-widest text-[8px] cursor-none"
+                onClick={handleSave}
+                className="px-4 py-1.5 border border-amber-900/40 text-amber-900/60 hover:text-amber-600 hover:border-amber-600 transition-all uppercase tracking-widest text-[8px] cursor-pointer"
               >
                 开始记录
               </button>
@@ -105,11 +148,11 @@ export const ProgressSave = ({
     <AnimatePresence>
       {showProgress && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0, pointerEvents: 'none' }}
-          className="fixed inset-0 z-[110] bg-[#0a0a0a]/98 backdrop-blur-md p-6 flex items-center justify-center"
-        >
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           exit={{ opacity: 0, pointerEvents: 'none' }}
+           className="fixed inset-0 z-[2500] bg-[#0a0a0a]/98 backdrop-blur-md p-6 flex items-center justify-center"
+         >
           {/* 带边框和边角装饰的容器 */}
           <div className="max-w-xl w-full p-8 md:p-12 border-2 border-amber-900/40 bg-[#0a0a0a] relative overflow-hidden">
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-amber-900/30 to-transparent" />
@@ -146,7 +189,7 @@ export const ProgressSave = ({
               {/* 返回主标题界面的按钮 */}
               <button
                 onClick={() => setShowProgress(false)}
-                className="mt-8 text-neutral-600 hover:text-amber-600 transition-colors uppercase tracking-[0.3em] text-[9px] cursor-none group flex items-center gap-2 mx-auto justify-center"
+                className="mt-8 text-neutral-600 hover:text-amber-600 transition-colors uppercase tracking-[0.3em] text-[9px] cursor-pointer group flex items-center gap-2 mx-auto justify-center"
               >
                 <X className="w-3 h-3 group-hover:rotate-90 transition-transform" />
                 关闭卷轴

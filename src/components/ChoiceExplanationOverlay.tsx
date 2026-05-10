@@ -29,7 +29,7 @@ export const ChoiceExplanationOverlay: React.FC<ChoiceExplanationOverlayProps> =
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-8 bg-[#0a0a0a]/90 backdrop-blur-md"
+          className="fixed inset-0 z-[3000] flex items-center justify-center p-4 md:p-8 bg-[#0a0a0a]/90 backdrop-blur-md"
         >
           {/* 主容器：包含边框和内部背景 */}
           <div className="relative max-w-lg w-full p-8 md:p-12 border-2 border-amber-900/40 bg-[#0a0a0a] text-center overflow-hidden">
@@ -51,7 +51,7 @@ export const ChoiceExplanationOverlay: React.FC<ChoiceExplanationOverlayProps> =
                 onClick={() => onProceed(choice)}
                 className="mt-8 px-8 py-3 border border-amber-900/40 text-amber-700 hover:text-amber-500 hover:border-amber-700 uppercase tracking-widest text-xs"
               >
-                Enter the Path
+                进入路径
               </Button>
             </div>
           </div>

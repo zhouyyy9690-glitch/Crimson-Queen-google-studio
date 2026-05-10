@@ -138,7 +138,7 @@ export const WorldMap = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, pointerEvents: 'none' }}
-            className="fixed inset-0 z-[150] bg-[#050505] overflow-hidden flex items-center justify-center"
+            className="fixed inset-0 z-[2000] bg-[#050505] overflow-hidden flex items-center justify-center"
           >
             {/* Background Textures matching ChapterSelectModal */}
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-leather.png')] opacity-20 pointer-events-none" />
@@ -152,7 +152,7 @@ export const WorldMap = ({
               <OrnateCorner position="br" />
 
               {/* 顶部标题与交互说明 - Floating top bar */}
-              <div className="absolute top-0 left-0 right-0 z-[160] px-12 py-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+              <div className="absolute top-0 left-0 right-0 z-[2010] px-12 py-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
                 <div className="flex items-center gap-4 pointer-events-auto">
                   <Scroll className="w-5 h-5 md:w-6 md:h-6 text-emerald-600 drop-shadow-[0_0_8px_rgba(5,150,105,0.4)]" />
                   <h3 className="font-display text-xl md:text-2xl text-emerald-600 tracking-widest uppercase drop-shadow-md">征服王国全图 · World Map</h3>
@@ -530,7 +530,7 @@ export const WorldMap = ({
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 100 }}
-            className="fixed top-0 right-0 bottom-0 w-full md:w-96 bg-[#0a0a0a] border-l border-amber-900/20 z-[200] shadow-2xl p-8 flex flex-col overflow-y-auto no-scrollbar"
+            className="fixed top-0 right-0 bottom-0 w-full md:w-96 bg-[#0a0a0a] border-l border-amber-900/20 z-[2020] shadow-2xl p-8 flex flex-col overflow-y-auto no-scrollbar"
           >
             <button 
               onClick={() => setSelectedLocationId(null)}
